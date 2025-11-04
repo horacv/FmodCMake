@@ -26,7 +26,7 @@ class AudioEngine
 		static bool Initialize();
 		static void Terminate();
 
-		// Call this every frame on the program's update loop
+		// Call this every frame in the program's update loop
 		static void Update();
 		static bool IsInitialized();
 
@@ -77,9 +77,14 @@ class AudioEngine
 		AudioEngine();
 		void RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath);
 
+#ifndef NDEBUG
 		// Logging
 		static FMOD_RESULT F_CALL AudioEngineLogCallback(FMOD_DEBUG_FLAGS flags,
-			const char* file, int line, const char* func, const char* message);
+			const char* file, int line, const char* function, const char* message);
+#endif
+		// Errors
+		static FMOD_RESULT F_CALL AudioEngineErrorCallback(FMOD_SYSTEM* system,
+			FMOD_SYSTEM_CALLBACK_TYPE type, void* commandData1, void* commandData2, void* userdata);
 
 };
 

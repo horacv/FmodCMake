@@ -50,10 +50,62 @@ bool AudioEngine::Initialize()
 
 	FMOD_SPEAKERMODE outputFormat = FMOD_SPEAKERMODE_STEREO;
 	{
-		auto it = speakerModes.find(config.GetString("System", "OutputFormat"));
-		if (it != speakerModes.end())
+		if (auto it = speakerModes.find(config.GetString("System", "OutputFormat"));
+			it != speakerModes.end())
 		{
 			outputFormat = it->second;
+		}
+	}
+
+	std::unordered_map<std::string, FMOD_OUTPUTTYPE> outputTypes{
+		{"AutoDetect", FMOD_OUTPUTTYPE_AUTODETECT},
+		{"Unknown", FMOD_OUTPUTTYPE_UNKNOWN},
+		{"NoSound", FMOD_OUTPUTTYPE_NOSOUND},
+		{"WavWriter", FMOD_OUTPUTTYPE_WAVWRITER},
+		{"NoSoundNRT", FMOD_OUTPUTTYPE_NOSOUND_NRT},
+		{"WavWriterNRT", FMOD_OUTPUTTYPE_WAVWRITER_NRT},
+		{"WASAPI", FMOD_OUTPUTTYPE_WASAPI},
+		{"ASIO", FMOD_OUTPUTTYPE_ASIO},
+		{"PulseAudio", FMOD_OUTPUTTYPE_PULSEAUDIO},
+		{"ALSA", FMOD_OUTPUTTYPE_ALSA},
+		{"CoreAudio", FMOD_OUTPUTTYPE_COREAUDIO},
+		{"AudioTrack", FMOD_OUTPUTTYPE_AUDIOTRACK},
+		{"OpenSL", FMOD_OUTPUTTYPE_OPENSL},
+		{"AudioOut", FMOD_OUTPUTTYPE_AUDIOOUT},
+		{"Audio3D", FMOD_OUTPUTTYPE_AUDIO3D},
+		{"WebAudio", FMOD_OUTPUTTYPE_WEBAUDIO},
+		{"NNAudio", FMOD_OUTPUTTYPE_NNAUDIO},
+		{"WinSonic", FMOD_OUTPUTTYPE_WINSONIC},
+		{"AAudio", FMOD_OUTPUTTYPE_AAUDIO},
+		{"AudioWorklet", FMOD_OUTPUTTYPE_AUDIOWORKLET},
+		{"Phase", FMOD_OUTPUTTYPE_PHASE},
+		{"OhAudio", FMOD_OUTPUTTYPE_OHAUDIO},
+	};
+
+	FMOD_OUTPUTTYPE outputType = FMOD_OUTPUTTYPE_AUTODETECT;
+	if (auto it = outputTypes.find(config.GetString("System", "OutputType"));
+			it != outputTypes.end())
+	{
+		outputType = it->second;
+	}
+
+	int audioDriverIndex = 0;
+	if (const std::string audioDriverName = config.GetString("System", "InitialOutputDriverName", "");
+			!audioDriverName.empty())
+	{
+		int driverCount;
+		coreSystem->getNumDrivers(&driverCount);
+
+		for (int i = 0; i < driverCount; i++)
+		{
+			char name[256] = {};
+			coreSystem->getDriverInfo(i, name, sizeof(name),
+				nullptr, nullptr, nullptr, nullptr);
+			if (std::string(name) == audioDriverName)
+			{
+				audioDriverIndex = i;
+				break;
+			}
 		}
 	}
 
@@ -66,9 +118,18 @@ bool AudioEngine::Initialize()
 	coreSystem->setSoftwareChannels(realChannelCount);
 	coreSystem->setDSPBufferSize(dspBufferLength, dspBufferCount);
 	coreSystem->setSoftwareFormat(sampleRate, outputFormat, 0);
+	coreSystem->setOutput(outputType);
+	coreSystem->setDriver(audioDriverIndex);
 
 	FMOD_STUDIO_INITFLAGS studio_init_flags = FMOD_STUDIO_INIT_NORMAL;
 	FMOD_INITFLAGS init_flags = FMOD_INIT_NORMAL;
+
+	void* initDriverData = nullptr;
+	const std::string wavWriterPath = config.GetString("System", "WavWriterPath", "");
+	if ((outputType == FMOD_OUTPUTTYPE_WAVWRITER || outputType == FMOD_OUTPUTTYPE_WAVWRITER_NRT) && !wavWriterPath.empty())
+	{
+		initDriverData = static_cast<void*>(const_cast<char*>(wavWriterPath.c_str()));
+	}
 
 #ifndef NDEBUG
 	if (config.GetBool("System", "EnableLiveUpdate")) { studio_init_flags |= FMOD_STUDIO_INIT_LIVEUPDATE; }
@@ -84,13 +145,19 @@ bool AudioEngine::Initialize()
 	};
 
 	FMOD_DEBUG_FLAGS loggingLevel = FMOD_DEBUG_LEVEL_NONE;
+	if (auto it = loggingLevels.find(config.GetString("System", "LoggingLevel"));
+			it != loggingLevels.end())
 	{
-		auto it = loggingLevels.find(config.GetString("System", "LoggingLevel"));
-		if (it != loggingLevels.end()) { loggingLevel = it->second; }
+		loggingLevel = it->second;
 	}
 
 	FMOD::Debug_Initialize(loggingLevel, FMOD_DEBUG_MODE_CALLBACK, AudioEngineLogCallback);
 #endif
+
+	if (config.GetBool("System", "EnableAPIErrorLogging"))
+	{
+		coreSystem->setCallback(AudioEngineErrorCallback, FMOD_SYSTEM_CALLBACK_ERROR);
+	}
 
 	std::string bankKey = config.GetString("Advanced", "StudioBankKey");
 
@@ -109,7 +176,7 @@ bool AudioEngine::Initialize()
 
 	if (coreSystem->setAdvancedSettings(&coreAdvancedSettings) != FMOD_OK) { return false; }
 
-	if (audioEngine.StudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags,nullptr) != FMOD_OK)
+	if (audioEngine.StudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags, initDriverData) != FMOD_OK)
 	{
 		return false;
 	}
@@ -316,8 +383,9 @@ void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& plug
 	}
 }
 
+#ifndef NDEBUG // Logging only available in the Debug config (fmodstudioL and fmodL dynamic libs)
 FMOD_RESULT AudioEngine::AudioEngineLogCallback(const FMOD_DEBUG_FLAGS flags,
-	const char* file, int line, const char* func, const char* message)
+	const char* file, int line, const char* function, const char* message)
 {
 	const auto now = std::chrono::system_clock::now();
 	const auto time64 = std::chrono::system_clock::to_time_t(now);
@@ -329,8 +397,8 @@ FMOD_RESULT AudioEngine::AudioEngineLogCallback(const FMOD_DEBUG_FLAGS flags,
 	localtime_r(&time64, &localTime);   // POSIX (safe version on Linux/macOS)
 #endif
 
-	std::ostringstream stringStream;
-	stringStream << std::put_time(&localTime, "%d-%b-%Y %H:%M:%S");
+	std::ostringstream stringStreamTime;
+	stringStreamTime << std::put_time(&localTime, "%d-%b-%Y %H:%M:%S");
 
 	std::unordered_map<FMOD_DEBUG_FLAGS, std::string> loggingLevels{
 			{FMOD_DEBUG_LEVEL_LOG, "Log"},
@@ -339,9 +407,40 @@ FMOD_RESULT AudioEngine::AudioEngineLogCallback(const FMOD_DEBUG_FLAGS flags,
 	};
 
 	std::string loggingLevel;
-	const auto it = loggingLevels.find(flags);
-	if (it != loggingLevels.end()) { loggingLevel = it->second; }
+	if (const auto it = loggingLevels.find(flags); it != loggingLevels.end())
+	{
+		loggingLevel = it->second;
+	}
 
-	std::cout << "FMOD " << loggingLevel << " [" + stringStream.str() + "] " + message << std::endl;
+	std::cout << "FMOD " << loggingLevel << " [" + stringStreamTime.str() + "] " + message << std::endl;
+	return FMOD_OK;
+}
+#endif
+
+FMOD_RESULT AudioEngine::AudioEngineErrorCallback(FMOD_SYSTEM *system, FMOD_SYSTEM_CALLBACK_TYPE type,
+	void *commandData1, void *commandData2, void *userdata)
+{
+	const auto callbackInfo = static_cast<FMOD_ERRORCALLBACK_INFO*>(commandData1);
+
+	const auto now = std::chrono::system_clock::now();
+	const auto time64 = std::chrono::system_clock::to_time_t(now);
+
+	std::tm localTime {};
+#ifdef WIN32
+	localtime_s(&localTime, &time64);   // Windows (safe version)
+#else
+	localtime_r(&time64, &localTime);   // POSIX (safe version on Linux/macOS)
+#endif
+
+	std::ostringstream stringStreamTime;
+	stringStreamTime << std::put_time(&localTime, "%d-%b-%Y %H:%M:%S");
+
+	const std::string message = std::format("{}({}) returned error for instance type: {} (0x{})\n",
+		callbackInfo->functionname,
+		callbackInfo->functionparams,
+		static_cast<int>(callbackInfo->result),
+		callbackInfo->instance);
+
+	std::cout << "FMOD Error [" + stringStreamTime.str() + "] " + message << std::endl;
 	return FMOD_OK;
 }
