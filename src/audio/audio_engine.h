@@ -67,25 +67,32 @@ class AudioEngine
 		static bool SetParameterByNameWithLabel(AudioInstance* instance,
 			const std::string& name, const std::string& label, bool bIgnoreSeekSpeed = false);
 
+		// Plugins
+
+		void RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath);
+
+		// Helpers
+
+		bool GetAudioDriverIndexByName(const std::string& audioDriverName, int& out_DriverIndex) const;
+
 	private:
 		static std::unique_ptr<AudioEngine> sInstance;
 		StudioSystem* StudioSystem;
 		bool bMainBanksLoaded;
+
 		std::string mSoundBankRootDirectory;
 		std::unordered_map<std::string, uint32_t> additionalPluginHandles;
 
 		AudioEngine();
-		void RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath);
+
+		// Logging and Errors
 
 #ifndef NDEBUG
-		// Logging
 		static FMOD_RESULT F_CALL AudioEngineLogCallback(FMOD_DEBUG_FLAGS flags,
 			const char* file, int line, const char* function, const char* message);
 #endif
-		// Errors
 		static FMOD_RESULT F_CALL AudioEngineErrorCallback(FMOD_SYSTEM* system,
 			FMOD_SYSTEM_CALLBACK_TYPE type, void* commandData1, void* commandData2, void* userdata);
-
 };
 
 #endif

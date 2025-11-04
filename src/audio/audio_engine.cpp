@@ -11,6 +11,73 @@
 
 std::unique_ptr<AudioEngine> AudioEngine::sInstance(nullptr);
 
+namespace {
+	FMOD_SPEAKERMODE ParseSpeakerMode(const std::string& speakerMode) {
+		std::unordered_map<std::string, FMOD_SPEAKERMODE> speakerModes{
+				{"Stereo", FMOD_SPEAKERMODE_STEREO},
+				{"5.1", FMOD_SPEAKERMODE_5POINT1},
+				{"7.1", FMOD_SPEAKERMODE_7POINT1},
+				{"7.1.4", FMOD_SPEAKERMODE_7POINT1POINT4}
+		};
+
+		if (const auto it = speakerModes.find(speakerMode); it != speakerModes.end())
+		{
+			return it->second;
+		}
+		return FMOD_SPEAKERMODE_STEREO;
+	}
+
+	FMOD_OUTPUTTYPE ParseOutputType(const std::string& outputMode) {
+		std::unordered_map<std::string, FMOD_OUTPUTTYPE> outputTypes{
+			{"AutoDetect", FMOD_OUTPUTTYPE_AUTODETECT},
+			{"Unknown", FMOD_OUTPUTTYPE_UNKNOWN},
+			{"NoSound", FMOD_OUTPUTTYPE_NOSOUND},
+			{"WavWriter", FMOD_OUTPUTTYPE_WAVWRITER},
+			{"NoSoundNRT", FMOD_OUTPUTTYPE_NOSOUND_NRT},
+			{"WavWriterNRT", FMOD_OUTPUTTYPE_WAVWRITER_NRT},
+			{"WASAPI", FMOD_OUTPUTTYPE_WASAPI},
+			{"ASIO", FMOD_OUTPUTTYPE_ASIO},
+			{"PulseAudio", FMOD_OUTPUTTYPE_PULSEAUDIO},
+			{"ALSA", FMOD_OUTPUTTYPE_ALSA},
+			{"CoreAudio", FMOD_OUTPUTTYPE_COREAUDIO},
+			{"AudioTrack", FMOD_OUTPUTTYPE_AUDIOTRACK},
+			{"OpenSL", FMOD_OUTPUTTYPE_OPENSL},
+			{"AudioOut", FMOD_OUTPUTTYPE_AUDIOOUT},
+			{"Audio3D", FMOD_OUTPUTTYPE_AUDIO3D},
+			{"WebAudio", FMOD_OUTPUTTYPE_WEBAUDIO},
+			{"NNAudio", FMOD_OUTPUTTYPE_NNAUDIO},
+			{"WinSonic", FMOD_OUTPUTTYPE_WINSONIC},
+			{"AAudio", FMOD_OUTPUTTYPE_AAUDIO},
+			{"AudioWorklet", FMOD_OUTPUTTYPE_AUDIOWORKLET},
+			{"Phase", FMOD_OUTPUTTYPE_PHASE},
+			{"OhAudio", FMOD_OUTPUTTYPE_OHAUDIO},
+		};
+
+		if (const auto it = outputTypes.find(outputMode); it != outputTypes.end())
+		{
+			return it->second;
+		}
+
+		return FMOD_OUTPUTTYPE_AUTODETECT;
+	}
+
+	FMOD_DEBUG_FLAGS ParseDebugFlags(const std::string& debugFlags) {
+		std::unordered_map<std::string, FMOD_DEBUG_FLAGS> loggingLevels{
+				{"None", FMOD_DEBUG_LEVEL_NONE},
+				{"Log", FMOD_DEBUG_LEVEL_LOG},
+				{"Warning", FMOD_DEBUG_LEVEL_WARNING},
+				{"Error", FMOD_DEBUG_LEVEL_ERROR}
+		};
+
+		if (const auto it = loggingLevels.find(debugFlags); it != loggingLevels.end())
+		{
+			return it->second;
+		}
+
+		return FMOD_DEBUG_LEVEL_NONE;
+	}
+}
+
 AudioEngine::AudioEngine()
 : StudioSystem(nullptr)
 , bMainBanksLoaded(false)
@@ -41,73 +108,8 @@ bool AudioEngine::Initialize()
 	CoreSystem* coreSystem = nullptr;
 	if (audioEngine.StudioSystem->getCoreSystem(&coreSystem) != FMOD_OK) { return false; }
 
-	std::unordered_map<std::string, FMOD_SPEAKERMODE> speakerModes{
-		{"Stereo", FMOD_SPEAKERMODE_STEREO},
-		{"5.1", FMOD_SPEAKERMODE_5POINT1},
-		{"7.1", FMOD_SPEAKERMODE_7POINT1},
-		{"7.1.4", FMOD_SPEAKERMODE_7POINT1POINT4}
-	};
-
-	FMOD_SPEAKERMODE outputFormat = FMOD_SPEAKERMODE_STEREO;
-	{
-		if (auto it = speakerModes.find(config.GetString("System", "OutputFormat"));
-			it != speakerModes.end())
-		{
-			outputFormat = it->second;
-		}
-	}
-
-	std::unordered_map<std::string, FMOD_OUTPUTTYPE> outputTypes{
-		{"AutoDetect", FMOD_OUTPUTTYPE_AUTODETECT},
-		{"Unknown", FMOD_OUTPUTTYPE_UNKNOWN},
-		{"NoSound", FMOD_OUTPUTTYPE_NOSOUND},
-		{"WavWriter", FMOD_OUTPUTTYPE_WAVWRITER},
-		{"NoSoundNRT", FMOD_OUTPUTTYPE_NOSOUND_NRT},
-		{"WavWriterNRT", FMOD_OUTPUTTYPE_WAVWRITER_NRT},
-		{"WASAPI", FMOD_OUTPUTTYPE_WASAPI},
-		{"ASIO", FMOD_OUTPUTTYPE_ASIO},
-		{"PulseAudio", FMOD_OUTPUTTYPE_PULSEAUDIO},
-		{"ALSA", FMOD_OUTPUTTYPE_ALSA},
-		{"CoreAudio", FMOD_OUTPUTTYPE_COREAUDIO},
-		{"AudioTrack", FMOD_OUTPUTTYPE_AUDIOTRACK},
-		{"OpenSL", FMOD_OUTPUTTYPE_OPENSL},
-		{"AudioOut", FMOD_OUTPUTTYPE_AUDIOOUT},
-		{"Audio3D", FMOD_OUTPUTTYPE_AUDIO3D},
-		{"WebAudio", FMOD_OUTPUTTYPE_WEBAUDIO},
-		{"NNAudio", FMOD_OUTPUTTYPE_NNAUDIO},
-		{"WinSonic", FMOD_OUTPUTTYPE_WINSONIC},
-		{"AAudio", FMOD_OUTPUTTYPE_AAUDIO},
-		{"AudioWorklet", FMOD_OUTPUTTYPE_AUDIOWORKLET},
-		{"Phase", FMOD_OUTPUTTYPE_PHASE},
-		{"OhAudio", FMOD_OUTPUTTYPE_OHAUDIO},
-	};
-
-	FMOD_OUTPUTTYPE outputType = FMOD_OUTPUTTYPE_AUTODETECT;
-	if (auto it = outputTypes.find(config.GetString("System", "OutputType"));
-			it != outputTypes.end())
-	{
-		outputType = it->second;
-	}
-
-	int audioDriverIndex = 0;
-	if (const std::string audioDriverName = config.GetString("System", "InitialOutputDriverName", "");
-			!audioDriverName.empty())
-	{
-		int driverCount;
-		coreSystem->getNumDrivers(&driverCount);
-
-		for (int i = 0; i < driverCount; i++)
-		{
-			char name[256] = {};
-			coreSystem->getDriverInfo(i, name, sizeof(name),
-				nullptr, nullptr, nullptr, nullptr);
-			if (std::string(name) == audioDriverName)
-			{
-				audioDriverIndex = i;
-				break;
-			}
-		}
-	}
+	FMOD_SPEAKERMODE outputFormat = ParseSpeakerMode(config.GetString("System", "OutputFormat", "Stereo"));
+	FMOD_OUTPUTTYPE outputType = ParseOutputType(config.GetString("System", "OutputType", "AutoDetect"));
 
 	const int maxChannelCount = config.GetInt("System", "MaxChannelCount", 128);
 	const int realChannelCount = config.GetInt("Advanced", "RealChannelCount", 64);
@@ -115,14 +117,14 @@ bool AudioEngine::Initialize()
 	const int dspBufferLength = config.GetInt("System", "DSPBufferLength");
 	const int dspBufferCount = config.GetInt("System", "DSPBufferCount");
 
+	int audioDriverIndex = 0;
+	audioEngine.GetAudioDriverIndexByName(config.GetString("System", "InitialOutputDriverName", ""), audioDriverIndex);
+
 	coreSystem->setSoftwareChannels(realChannelCount);
 	coreSystem->setDSPBufferSize(dspBufferLength, dspBufferCount);
 	coreSystem->setSoftwareFormat(sampleRate, outputFormat, 0);
 	coreSystem->setOutput(outputType);
 	coreSystem->setDriver(audioDriverIndex);
-
-	FMOD_STUDIO_INITFLAGS studio_init_flags = FMOD_STUDIO_INIT_NORMAL;
-	FMOD_INITFLAGS init_flags = FMOD_INIT_NORMAL;
 
 	void* initDriverData = nullptr;
 	const std::string wavWriterPath = config.GetString("System", "WavWriterPath", "");
@@ -130,29 +132,6 @@ bool AudioEngine::Initialize()
 	{
 		initDriverData = static_cast<void*>(const_cast<char*>(wavWriterPath.c_str()));
 	}
-
-#ifndef NDEBUG
-	if (config.GetBool("System", "EnableLiveUpdate")) { studio_init_flags |= FMOD_STUDIO_INIT_LIVEUPDATE; }
-	if (config.GetBool("System", "EnableMemoryTracking")) { studio_init_flags |= FMOD_STUDIO_INIT_MEMORY_TRACKING; }
-#endif
-
-#ifndef NDEBUG // Logging only available in the Debug config (fmodstudioL and fmodL dynamic libs)
-	std::unordered_map<std::string, FMOD_DEBUG_FLAGS> loggingLevels{
-			{"None", FMOD_DEBUG_LEVEL_NONE},
-			{"Log", FMOD_DEBUG_LEVEL_LOG},
-			{"Warning", FMOD_DEBUG_LEVEL_WARNING},
-			{"Error", FMOD_DEBUG_LEVEL_ERROR}
-	};
-
-	FMOD_DEBUG_FLAGS loggingLevel = FMOD_DEBUG_LEVEL_NONE;
-	if (auto it = loggingLevels.find(config.GetString("System", "LoggingLevel"));
-			it != loggingLevels.end())
-	{
-		loggingLevel = it->second;
-	}
-
-	FMOD::Debug_Initialize(loggingLevel, FMOD_DEBUG_MODE_CALLBACK, AudioEngineLogCallback);
-#endif
 
 	if (config.GetBool("System", "EnableAPIErrorLogging"))
 	{
@@ -164,22 +143,27 @@ bool AudioEngine::Initialize()
 	FMOD_STUDIO_ADVANCEDSETTINGS studioAdvancedSettings = {};
 	studioAdvancedSettings.cbsize = sizeof(FMOD_STUDIO_ADVANCEDSETTINGS);
 	studioAdvancedSettings.studioupdateperiod = config.GetInt("Advanced", "StudioUpdatePeriodMs");
-	if (!bankKey.empty())
-	{
-		studioAdvancedSettings.encryptionkey = bankKey.c_str();
-	}
+	if (!bankKey.empty()) { studioAdvancedSettings.encryptionkey = bankKey.c_str(); }
 
 	FMOD_ADVANCEDSETTINGS coreAdvancedSettings = {};
 	coreAdvancedSettings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
 	coreAdvancedSettings.vol0virtualvol = config.GetFloat("Advanced", "Vol0VirtualLevel");
 	coreAdvancedSettings.profilePort = config.GetInt("Advanced", "LiveUpdatePort");
-
 	if (coreSystem->setAdvancedSettings(&coreAdvancedSettings) != FMOD_OK) { return false; }
 
-	if (audioEngine.StudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags, initDriverData) != FMOD_OK)
-	{
-		return false;
-	}
+	FMOD_STUDIO_INITFLAGS studio_init_flags = FMOD_STUDIO_INIT_NORMAL;
+	FMOD_INITFLAGS init_flags = FMOD_INIT_NORMAL;
+
+#ifndef NDEBUG
+	if (config.GetBool("System", "EnableLiveUpdate")) { studio_init_flags |= FMOD_STUDIO_INIT_LIVEUPDATE; }
+	if (config.GetBool("System", "EnableMemoryTracking")) { studio_init_flags |= FMOD_STUDIO_INIT_MEMORY_TRACKING; }
+
+	// Logging only available in the Debug config (fmodstudioL and fmodL dynamic libs)
+	FMOD_DEBUG_FLAGS loggingLevel = ParseDebugFlags(config.GetString("System", "DebugFlags", "None"));
+	FMOD::Debug_Initialize(loggingLevel, FMOD_DEBUG_MODE_CALLBACK, AudioEngineLogCallback);
+#endif
+
+	if (audioEngine.StudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags, initDriverData) != FMOD_OK) { return false; }
 
 	// ADDITIONAL PLUGINS
 	// Registering the resonance dynamic library as an additional plugin
@@ -202,8 +186,7 @@ bool AudioEngine::Initialize()
 
 void AudioEngine::Terminate()
 {
-	AudioEngine& audioEngine = Get();
-	if (audioEngine.StudioSystem->isValid())
+	if (AudioEngine& audioEngine = Get(); audioEngine.StudioSystem->isValid())
 	{
 		audioEngine.StudioSystem->release();
 		audioEngine.StudioSystem = nullptr;
@@ -224,6 +207,8 @@ bool AudioEngine::IsInitialized()
 	const AudioEngine& audioEngine = Get();
 	return audioEngine.StudioSystem && audioEngine.StudioSystem->isValid() && audioEngine.bMainBanksLoaded;
 }
+
+// Soundbanks
 
 void AudioEngine::SetSoundBankRootDirectory(const std::string& directory)
 {
@@ -267,6 +252,8 @@ bool AudioEngine::UnloadSoundBank(AudioBank* bank)
 	return bank->unload() == FMOD_OK;
 }
 
+// Events
+
 AudioInstance* AudioEngine::PlayAudioEvent(const std::string& studioPath, const Audio3DAttributes& audio3dAttributes,
 	void* userData, const AudioEventCallback callback, const AudioCallbackType callbackType, const bool autoStart, const bool autoRelease)
 {
@@ -302,6 +289,8 @@ AudioInstance* AudioEngine::PlayAudioEvent(const std::string& studioPath, const 
 	return instance;
 }
 
+// Audio Instances
+
 bool AudioEngine::InstanceStart(AudioInstance* instance)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
@@ -326,6 +315,8 @@ bool AudioEngine::InstanceSetPaused(AudioInstance* instance, const bool bPaused)
 	return instance->setPaused(bPaused) == FMOD_OK;
 }
 
+// Parameters
+
 bool AudioEngine::InstanceIsPaused(const AudioInstance* instance, bool& outPaused)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
@@ -348,14 +339,6 @@ bool AudioEngine::SetGlobalParameterByNameWithLabel(const std::string& name,
 	return result == FMOD_OK;
 }
 
-bool AudioEngine::SetParameterByNameWithLabel(AudioInstance* instance,
-			const std::string& name, const std::string& label, const bool bIgnoreSeekSpeed)
-{
-	if (!(instance && instance->isValid() && IsInitialized())) { return false; }
-	const FMOD_RESULT result = instance->setParameterByNameWithLabel(name.c_str(), label.c_str(), bIgnoreSeekSpeed);
-	return result == FMOD_OK;
-}
-
 bool AudioEngine::SetParameterByName(AudioInstance* instance,
 			const std::string& name, const float value, const bool bIgnoreSeekSpeed)
 {
@@ -364,6 +347,16 @@ bool AudioEngine::SetParameterByName(AudioInstance* instance,
 	const FMOD_RESULT result = instance->setParameterByName(name.c_str(), value, bIgnoreSeekSpeed);
 	return result == FMOD_OK;
 }
+
+bool AudioEngine::SetParameterByNameWithLabel(AudioInstance* instance,
+			const std::string& name, const std::string& label, const bool bIgnoreSeekSpeed)
+{
+	if (!(instance && instance->isValid() && IsInitialized())) { return false; }
+	const FMOD_RESULT result = instance->setParameterByNameWithLabel(name.c_str(), label.c_str(), bIgnoreSeekSpeed);
+	return result == FMOD_OK;
+}
+
+// Plugins
 
 void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath)
 {
@@ -382,6 +375,40 @@ void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& plug
 		}
 	}
 }
+
+// Helpers
+
+bool AudioEngine::GetAudioDriverIndexByName(const std::string &audioDriverName, int &out_DriverIndex) const
+{
+	if (!StudioSystem->isValid()) { return false; }
+
+	FMOD::System* coreSystem = nullptr;
+	StudioSystem->getCoreSystem(&coreSystem);
+
+	if (!coreSystem) { return false; }
+
+	if (!audioDriverName.empty())
+	{
+		int driverCount;
+		coreSystem->getNumDrivers(&driverCount);
+
+		for (int i = 0; i < driverCount; i++)
+		{
+			char name[256] = {};
+			coreSystem->getDriverInfo(i, name, sizeof(name),
+				nullptr, nullptr, nullptr, nullptr);
+			if (std::string(name) == audioDriverName)
+			{
+				out_DriverIndex = i;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+// Logging and Errors
 
 #ifndef NDEBUG // Logging only available in the Debug config (fmodstudioL and fmodL dynamic libs)
 FMOD_RESULT AudioEngine::AudioEngineLogCallback(const FMOD_DEBUG_FLAGS flags,
