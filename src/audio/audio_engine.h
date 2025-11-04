@@ -15,6 +15,8 @@ using CoreSystem = FMOD::System;
 using AudioInstance = FMOD::Studio::EventInstance;
 using Audio3DAttributes = FMOD_3D_ATTRIBUTES;
 using AudioBank = FMOD::Studio::Bank;
+using AudioBus = FMOD::Studio::Bus;
+using AudioVCA = FMOD::Studio::VCA;
 using AudioEventCallback = FMOD_STUDIO_EVENT_CALLBACK;
 using AudioCallbackType = FMOD_STUDIO_EVENT_CALLBACK_TYPE;
 
@@ -67,13 +69,31 @@ class AudioEngine
 		static bool SetParameterByNameWithLabel(AudioInstance* instance,
 			const std::string& name, const std::string& label, bool bIgnoreSeekSpeed = false);
 
+		// Buses
+
+		static bool GetBus(const std::string& studioPath, AudioBus*& outBusPtr);
+		static bool BusSetVolume(AudioBus* bus, float volume);
+		static bool BusGetVolume(const AudioBus* bus, float& outVolume);
+		static bool BusGetVolume(const AudioBus* bus, float& outVolume, float& finalVolume);
+		static bool BusSetMute(AudioBus* bus, bool bMute);
+		static bool BusIsMuted(const AudioBus* bus, bool& outMuted);
+		static bool BusSetPaused(AudioBus* bus, bool bPaused);
+		static bool BusIsPaused(const AudioBus* bus, bool& outPaused);
+		static bool BusStopAllAudioEvents(AudioBus* bus, bool bAllowFadeOut = true);
+
+		// VCAs
+
+		static bool GetVCA(const std::string& studioPath, AudioVCA*& outVCAPtr);
+		static bool VCA_GetVolume(const AudioVCA* vca, float& outVolume);
+		static bool VCA_GetVolume(const AudioVCA* vca, float& outVolume, float& outFinalVolume);
+
 		// Plugins
 
 		void RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath);
 
 		// Helpers
 
-		bool GetAudioDriverIndexByName(const std::string& audioDriverName, int& out_DriverIndex) const;
+		bool GetAudioDriverIndexByName(const std::string& audioDriverName, int& outDriverIndex) const;
 
 	private:
 		static std::unique_ptr<AudioEngine> sInstance;

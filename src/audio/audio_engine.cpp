@@ -227,9 +227,10 @@ bool AudioEngine::LoadSoundBankFile(const std::string& filePath, AudioBank*& out
 	if (!audioEngine.StudioSystem->isValid()) { return false; }
 
 	const std::string fullBankPath = audioEngine.mSoundBankRootDirectory + filePath;
+	const FMOD_RESULT result = audioEngine.StudioSystem->loadBankFile(fullBankPath.c_str(),
+		FMOD_STUDIO_LOAD_BANK_NORMAL, &outBankPtr);
 
-	return audioEngine.StudioSystem->loadBankFile(fullBankPath.c_str(),
-		FMOD_STUDIO_LOAD_BANK_NORMAL, &outBankPtr) == FMOD_OK;
+	return result == FMOD_OK;
 }
 
 bool AudioEngine::UnloadSoundBank(const std::string& studioPath)
@@ -249,7 +250,8 @@ bool AudioEngine::UnloadSoundBank(const std::string& studioPath)
 bool AudioEngine::UnloadSoundBank(AudioBank* bank)
 {
 	if (!(Get().StudioSystem->isValid() && bank)) { return false; }
-	return bank->unload() == FMOD_OK;
+	const FMOD_RESULT result = bank->unload();
+	return result == FMOD_OK;
 }
 
 // Events
@@ -262,8 +264,11 @@ AudioInstance* AudioEngine::PlayAudioEvent(const std::string& studioPath, const 
 	FMOD::Studio::EventDescription* description = nullptr;
 	AudioInstance* instance = nullptr;
 
-	if (Get().StudioSystem->getEvent(studioPath.c_str(), &description) != FMOD_OK) { return nullptr; }
-	if (description->createInstance(&instance) != FMOD_OK) { return nullptr; }
+	FMOD_RESULT result = Get().StudioSystem->getEvent(studioPath.c_str(), &description);
+	if (result != FMOD_OK) { return nullptr; }
+
+	result = description->createInstance(&instance);
+	if (result != FMOD_OK) { return nullptr; }
 
 	instance->set3DAttributes(&audio3dAttributes);
 
@@ -294,25 +299,29 @@ AudioInstance* AudioEngine::PlayAudioEvent(const std::string& studioPath, const 
 bool AudioEngine::InstanceStart(AudioInstance* instance)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
-	return instance->start() == FMOD_OK;
+	const FMOD_RESULT result = instance->start();
+	return result == FMOD_OK;
 }
 
 bool AudioEngine::InstanceStop(AudioInstance* instance, const bool bAllowFadeOut)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
-	return instance->stop(bAllowFadeOut ? FMOD_STUDIO_STOP_ALLOWFADEOUT : FMOD_STUDIO_STOP_IMMEDIATE) == FMOD_OK;
+	const FMOD_RESULT result = instance->stop(bAllowFadeOut ? FMOD_STUDIO_STOP_ALLOWFADEOUT : FMOD_STUDIO_STOP_IMMEDIATE);
+	return result == FMOD_OK;
 }
 
 bool AudioEngine::InstanceRelease(AudioInstance* instance)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
-	return instance->release() == FMOD_OK;
+	const FMOD_RESULT result = instance->release();
+	return result == FMOD_OK;
 }
 
 bool AudioEngine::InstanceSetPaused(AudioInstance* instance, const bool bPaused)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
-	return instance->setPaused(bPaused) == FMOD_OK;
+	const FMOD_RESULT result = instance->setPaused(bPaused);
+	return result == FMOD_OK;
 }
 
 // Parameters
@@ -320,7 +329,8 @@ bool AudioEngine::InstanceSetPaused(AudioInstance* instance, const bool bPaused)
 bool AudioEngine::InstanceIsPaused(const AudioInstance* instance, bool& outPaused)
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
-	return instance->getPaused(&outPaused) == FMOD_OK;
+	const FMOD_RESULT result = instance->getPaused(&outPaused);
+	return result == FMOD_OK;
 }
 
 bool AudioEngine::SetGlobalParameterByName(const std::string& name,
@@ -339,8 +349,8 @@ bool AudioEngine::SetGlobalParameterByNameWithLabel(const std::string& name,
 	return result == FMOD_OK;
 }
 
-bool AudioEngine::SetParameterByName(AudioInstance* instance,
-			const std::string& name, const float value, const bool bIgnoreSeekSpeed)
+bool AudioEngine::SetParameterByName(AudioInstance* instance, const std::string& name,
+	const float value, const bool bIgnoreSeekSpeed)
 {
 	if (!(instance && instance->isValid() && IsInitialized())) { return false; }
 
@@ -353,6 +363,92 @@ bool AudioEngine::SetParameterByNameWithLabel(AudioInstance* instance,
 {
 	if (!(instance && instance->isValid() && IsInitialized())) { return false; }
 	const FMOD_RESULT result = instance->setParameterByNameWithLabel(name.c_str(), label.c_str(), bIgnoreSeekSpeed);
+	return result == FMOD_OK;
+}
+
+// Buses
+
+bool AudioEngine::GetBus(const std::string& studioPath, AudioBus*& outBusPtr)
+{
+	if (!IsInitialized()) { return false; }
+	const FMOD_RESULT result = Get().StudioSystem->getBus(studioPath.c_str(), &outBusPtr);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusSetVolume(AudioBus* bus, const float volume)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->setVolume(volume);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusGetVolume(const AudioBus* bus, float& outVolume)
+{
+	float finalVolume;
+	return BusGetVolume(bus, outVolume, finalVolume);
+}
+
+bool AudioEngine::BusGetVolume(const AudioBus* bus, float& outVolume, float& finalVolume)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->getVolume(&outVolume, &finalVolume);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusSetMute(AudioBus* bus, const bool bMute)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->setMute(bMute);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusIsMuted(const AudioBus* bus, bool& outMuted)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->getMute(&outMuted);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusSetPaused(AudioBus* bus, const bool bPaused)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->setPaused(bPaused);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusIsPaused(const AudioBus* bus, bool& outPaused)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->getPaused(&outPaused);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::BusStopAllAudioEvents(AudioBus* bus, const bool bAllowFadeOut)
+{
+	if (!(IsInitialized() && bus)) { return false; }
+	const FMOD_RESULT result = bus->stopAllEvents(bAllowFadeOut ? FMOD_STUDIO_STOP_ALLOWFADEOUT : FMOD_STUDIO_STOP_IMMEDIATE);
+	return result == FMOD_OK;
+}
+
+// VCAs
+
+bool AudioEngine::GetVCA(const std::string& studioPath, AudioVCA*& outVCAPtr)
+{
+	if (!IsInitialized()) { return false; }
+	const FMOD_RESULT result = Get().StudioSystem->getVCA(studioPath.c_str(), &outVCAPtr);
+	return result == FMOD_OK;
+}
+
+bool AudioEngine::VCA_GetVolume(const AudioVCA* vca, float& outVolume)
+{
+	float finalVolume;
+	return VCA_GetVolume(vca, outVolume, finalVolume);
+}
+
+bool AudioEngine::VCA_GetVolume(const AudioVCA* vca, float& outVolume, float& outFinalVolume)
+{
+	if (!(IsInitialized() && vca)) { return false; }
+	const FMOD_RESULT result = vca->getVolume(&outVolume, &outFinalVolume);
 	return result == FMOD_OK;
 }
 
@@ -378,7 +474,7 @@ void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& plug
 
 // Helpers
 
-bool AudioEngine::GetAudioDriverIndexByName(const std::string &audioDriverName, int &out_DriverIndex) const
+bool AudioEngine::GetAudioDriverIndexByName(const std::string& audioDriverName, int& outDriverIndex) const
 {
 	if (!StudioSystem->isValid()) { return false; }
 
@@ -399,7 +495,7 @@ bool AudioEngine::GetAudioDriverIndexByName(const std::string &audioDriverName, 
 				nullptr, nullptr, nullptr, nullptr);
 			if (std::string(name) == audioDriverName)
 			{
-				out_DriverIndex = i;
+				outDriverIndex = i;
 				return true;
 			}
 		}
