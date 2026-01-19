@@ -470,7 +470,8 @@ void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& plug
 	for (const auto& additionalPluginName : pluginNames)
 	{
 		uint32_t additionalPluginHandle = 0;
-		if (coreSystem->loadPlugin(additionalPluginName.c_str(), &additionalPluginHandle) == FMOD_OK)
+		if (const FMOD_RESULT result = coreSystem->loadPlugin(additionalPluginName.c_str(), &additionalPluginHandle);
+			result == FMOD_OK)
 		{
 			additionalPluginHandles.emplace(std::pair(additionalPluginName, additionalPluginHandle));
 		}
