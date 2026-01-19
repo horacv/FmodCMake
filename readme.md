@@ -5,6 +5,8 @@ A CMake template project that demonstrates integration of Firelight Technologies
 
 ![screenshot.png](images/screenshot.png)
 
+### Verified FMOD Programmers API Version: 2.03.12
+
 ## Overview
 
 This project showcases a basic integration between FMOD and raylib, featuring:
