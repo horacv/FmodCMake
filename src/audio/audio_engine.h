@@ -105,6 +105,15 @@ class AudioEngine
 
 		AudioEngine();
 
+		/** Audio Engine (Studio) Callback
+		 * Refer to: https://www.fmod.com/docs/2.03/api/core-api-system.html#system_setcallback
+		 * "System callbacks can be called by a variety of FMOD threads,
+		 *  so make sure any code executed inside the callback is thread safe"
+		 */
+
+		static FMOD_RESULT F_CALL StudioSystemCallback(FMOD_STUDIO_SYSTEM* system,
+			FMOD_STUDIO_SYSTEM_CALLBACK_TYPE type, void* commandData, void* userdata);
+
 		// Logging and Errors
 
 #ifndef NDEBUG

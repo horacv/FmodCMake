@@ -146,6 +146,7 @@ bool AudioEngine::Initialize()
 	if (!bankKey.empty()) { studioAdvancedSettings.encryptionkey = bankKey.c_str(); }
 
 	FMOD_ADVANCEDSETTINGS coreAdvancedSettings = {};
+
 	coreAdvancedSettings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
 	coreAdvancedSettings.vol0virtualvol = config.GetFloat("Advanced", "Vol0VirtualLevel");
 	coreAdvancedSettings.profilePort = config.GetInt("Advanced", "LiveUpdatePort");
@@ -164,6 +165,11 @@ bool AudioEngine::Initialize()
 #endif
 
 	if (audioEngine.StudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags, initDriverData) != FMOD_OK) { return false; }
+
+	// AUDIO ENGINE CALLBACK
+
+	audioEngine.StudioSystem->setUserData(&audioEngine);
+	audioEngine.StudioSystem->setCallback(StudioSystemCallback, FMOD_STUDIO_SYSTEM_CALLBACK_ALL);
 
 	// ADDITIONAL PLUGINS
 	// Registering the resonance dynamic library as an additional plugin
@@ -198,8 +204,7 @@ void AudioEngine::Terminate()
 
 void AudioEngine::Update()
 {
-	if (!IsInitialized()) { return; }
-	Get().StudioSystem->update();
+	if (IsInitialized()) { Get().StudioSystem->update(); }
 }
 
 bool AudioEngine::IsInitialized()
@@ -504,6 +509,38 @@ bool AudioEngine::GetAudioDriverIndexByName(const std::string& audioDriverName, 
 	return false;
 }
 
+// Audio Engine (Studio) Callback
+
+FMOD_RESULT AudioEngine::StudioSystemCallback(FMOD_STUDIO_SYSTEM* system, FMOD_STUDIO_SYSTEM_CALLBACK_TYPE type,
+	void* commandData, void* userdata)
+{
+	const auto* audioEngine =  static_cast<AudioEngine*>(userdata);
+	if (!audioEngine) { return FMOD_ERR_BADCOMMAND; }
+
+	switch (type)
+	{
+		case FMOD_STUDIO_SYSTEM_CALLBACK_PREUPDATE:
+			// std::cout << "FMOD UPDATE PRE" << std::endl; // Commented out to not spam the console
+			break;
+		case FMOD_STUDIO_SYSTEM_CALLBACK_POSTUPDATE:
+			// std::cout << "FMOD UPDATE POST" << std::endl; // Commented out to not spam the console
+			break;
+		case FMOD_STUDIO_SYSTEM_CALLBACK_BANK_UNLOAD:
+			std::cout << "FMOD BANK UNLOADED: " << std::endl;
+			break;
+		case FMOD_STUDIO_SYSTEM_CALLBACK_LIVEUPDATE_CONNECTED:
+			std::cout << "FMOD LIVE UPDATE CONNECTED" << std::endl;
+			break;
+		case FMOD_STUDIO_SYSTEM_CALLBACK_LIVEUPDATE_DISCONNECTED:
+			std::cout << "FMOD LIVE UPDATE DISCONNECTED" << std::endl;
+			break;
+		default:
+			break;
+	}
+
+	return FMOD_OK;
+}
+
 // Logging and Errors
 
 #ifndef NDEBUG // Logging only available in the Debug config (fmodstudioL and fmodL dynamic libs)
@@ -540,8 +577,8 @@ FMOD_RESULT AudioEngine::AudioEngineLogCallback(const FMOD_DEBUG_FLAGS flags,
 }
 #endif
 
-FMOD_RESULT AudioEngine::AudioEngineErrorCallback(FMOD_SYSTEM *system, FMOD_SYSTEM_CALLBACK_TYPE type,
-	void *commandData1, void *commandData2, void *userdata)
+FMOD_RESULT AudioEngine::AudioEngineErrorCallback(FMOD_SYSTEM* system, FMOD_SYSTEM_CALLBACK_TYPE type,
+	void* commandData1, void* commandData2, void* userdata)
 {
 	const auto callbackInfo = static_cast<FMOD_ERRORCALLBACK_INFO*>(commandData1);
 

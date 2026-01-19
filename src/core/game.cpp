@@ -16,7 +16,6 @@ Game::Game()
 void Game::Initialize()
 {
 	AudioEngine::Initialize(); // AUDIO ENGINE INIT
-	AudioEngine::Initialize();
 
 	SetTargetFPS(60);
 	InitWindow(static_cast<int>(mWindowWidth), static_cast<int>(mWindowHeight), "FMOD is Alive!");
@@ -52,7 +51,7 @@ bool Game::IsRunning() const
 
 void Game::Update()
 {
-	AudioEngine::Update(); // AUDIO ENGINE UPDATE
+	AudioEngine::Update(); // AUDIO ENGINE UPDATE (GAME THREAD)
 }
 
 void Game::ProcessInput()
