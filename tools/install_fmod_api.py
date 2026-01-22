@@ -1,0 +1,332 @@
+"""
+FMOD Studio API Installer for CI/CD
+Extracts FMOD installer, copies API files to the project, and cleans up.
+"""
+
+import sys
+import subprocess
+import shutil
+import tempfile
+from pathlib import Path
+
+# Project directories
+PROJECT_ROOT = Path(__file__).parent.parent
+FMOD_LIB_DIR = PROJECT_ROOT / "libs" / "fmod"
+
+# Platform-specific configuration
+PLATFORM_CONFIG = {
+    'windows': {
+        'lib_subdir': 'win_x64',
+        'api_structure': {
+            'core_inc_dir': 'api/core/inc',
+            'core_lib_dir': 'api/core/lib/x64',
+            'studio_inc_dir': 'api/studio/inc',
+            'studio_lib_dir': 'api/studio/lib/x64',
+            'plugins': {
+                'plugins/fmod_haptics/lib/x64/fmod_haptics.dll',
+                'plugins/resonance_audio/lib/x64/resonanceaudio.dll'
+                # Add more plugins here if needed...
+            }
+        }
+    },
+    'linux': {
+        'lib_subdir': 'linux_x64',
+        'api_structure': {
+            'core_inc_dir': 'api/core/inc',
+            'core_lib_dir': 'api/core/lib/x86_64',
+            'studio_inc_dir': 'api/studio/inc',
+            'studio_lib_dir': 'api/studio/lib/x86_64',
+            'plugins': {
+                'plugins/resonance_audio/lib/resonanceaudio.so'
+                # Add more plugins here if needed...
+            }
+        }
+    },
+    'apple': {
+        'lib_subdir': 'apple',
+        'api_structure': {
+            'core_inc_dir': 'api/core/inc',
+            'core_lib_dir': 'api/core/lib',
+            'studio_inc_dir': 'api/studio/inc',
+            'studio_lib_dir': 'api/studio/lib',
+            'plugins': {
+                'plugins/fmod_haptics/lib/fmod_haptics.dylib',
+                'plugins/resonance_audio/lib/resonanceaudio.dylib'
+                # Add more plugins here if needed...
+            }
+        }
+    }
+}
+
+
+def detect_platform(installer_path):
+    """Detect platform from installer filename."""
+    name = installer_path.name.lower()
+    if 'win' in name or name.endswith('.exe'):
+        return 'windows'
+    elif 'linux' in name or name.endswith('.tar.gz'):
+        return 'linux'
+    elif 'mac' in name or 'osx' in name or name.endswith('.dmg'):
+        return 'apple'
+    else:
+        raise ValueError(f"Cannot detect platform from installer: {installer_path.name}")
+
+
+def extract_windows_installer(installer_path, temp_dir):
+    """Extract Windows .exe installer using available methods."""
+    print("Extracting Windows installer...")
+
+    # Try 7zip first (most common in CI environments)
+    seven_zip_paths = [
+        '7z',
+        r'C:\Program Files\7-Zip\7z.exe',
+        r'C:\Program Files (x86)\7-Zip\7z.exe',
+    ]
+
+    for seven_zip in seven_zip_paths:
+        try:
+            result = subprocess.run(
+                [seven_zip, 'x', str(installer_path), f'-o{temp_dir}', '-y'],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            print("✓ Extracted with 7zip")
+            return
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+            continue
+
+    # Try innounp (InnoSetup unpacker)
+    try:
+        subprocess.run(
+            ['innounp', '-x', '-d', str(temp_dir), str(installer_path)],
+            check=True,
+            capture_output=True
+        )
+        print("✓ Extracted with innounp")
+        return
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pass
+
+    # Error message with helpful information
+    raise RuntimeError(
+        "Cannot extract Windows installer. Please install 7-Zip:\n"
+        "  1. Download from: https://www.7-zip.org/download.html\n"
+        "  2. Install to default location\n"
+        "  3. Re-run this script\n\n"
+        "For CI/CD, install 7-Zip in your pipeline:\n"
+        "  choco install 7zip  (Chocolatey)\n"
+        "  or use GitHub Actions: actions/setup-7zip"
+    )
+
+
+def extract_linux_tarball(installer_path, temp_dir):
+    """Extract Linux .tar.gz archive."""
+    print("Extracting Linux tarball...")
+    shutil.unpack_archive(str(installer_path), temp_dir)
+    print("✓ Extracted tarball")
+
+
+def extract_macos_dmg(installer_path, temp_dir):
+    """Extract macOS .dmg installer."""
+    print("Extracting macOS DMG...")
+
+    # Mount the DMG
+    mount_point = temp_dir / "dmg_mount"
+    mount_point.mkdir(exist_ok=True)
+
+    subprocess.run(
+        ['hdiutil', 'attach', str(installer_path), '-mountpoint', str(mount_point), '-nobrowse'],
+        check=True
+    )
+
+    try:
+        # Copy contents
+        for item in mount_point.iterdir():
+            if item.is_dir():
+                shutil.copytree(item, temp_dir / item.name, dirs_exist_ok=True)
+            else:
+                shutil.copy2(item, temp_dir / item.name)
+    finally:
+        # Unmount
+        subprocess.run(['hdiutil', 'detach', str(mount_point)], check=False)
+
+    print("✓ Extracted DMG")
+
+
+def copy_api_files(temp_dir, platform):
+    """Copy FMOD API files from temp directory to project."""
+    print("\nCopying FMOD API files to project...")
+
+    config = PLATFORM_CONFIG[platform]
+    api_structure = config['api_structure']
+
+    # Find the actual API directory in temp (may be nested)
+    api_dirs = list(temp_dir.rglob('api'))
+    if not api_dirs:
+        # Try alternate structure
+        api_dirs = [temp_dir]
+
+    source_root = api_dirs[0].parent if api_dirs else temp_dir
+
+    # Copy core headers
+    src = source_root / api_structure['core_inc_dir']
+    dst = FMOD_LIB_DIR / "core" / "inc"
+    if src.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        print(f"✓ Copied core headers ({len(list(dst.glob('*')))} files)")
+    else:
+        print(f"⚠ Warning: Core headers not found at {src}")
+
+    # Copy core libraries
+    src = source_root / api_structure['core_lib_dir']
+    dst = FMOD_LIB_DIR / "core" / "lib" / config['lib_subdir']
+    if src.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        print(f"✓ Copied core libraries ({len(list(dst.glob('*')))} files)")
+    else:
+        print(f"⚠ Warning: Core libraries not found at {src}")
+
+    # Copy studio headers
+    src = source_root / api_structure['studio_inc_dir']
+    dst = FMOD_LIB_DIR / "studio" / "inc"
+    if src.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        print(f"✓ Copied studio headers ({len(list(dst.glob('*')))} files)")
+    else:
+        print(f"⚠ Warning: Studio headers not found at {src}")
+
+    # Copy studio libraries
+    src = source_root / api_structure['studio_lib_dir']
+    dst = FMOD_LIB_DIR / "studio" / "lib" / config['lib_subdir']
+    if src.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        print(f"✓ Copied studio libraries ({len(list(dst.glob('*')))} files)")
+    else:
+        print(f"⚠ Warning: Studio libraries not found at {src}")
+
+    # Copy plugins - handled by separate function
+    copy_plugins(source_root, platform)
+
+
+def copy_plugins(source_root, platform):
+    """Copy specific plugin DLLs to project plugins directory based on config."""
+    config = PLATFORM_CONFIG[platform]
+    api_structure = config['api_structure']
+
+    # Get plugin paths from config
+    plugin_paths = api_structure.get('plugins')
+
+    if not plugin_paths:
+        print("⚠ No plugins configured to copy")
+        return
+
+    # Handle both set and string formats (for backwards compatibility)
+    if isinstance(plugin_paths, str):
+        # Old format: copy entire directory
+        src = source_root / plugin_paths
+        dst = FMOD_LIB_DIR / "plugins" / config['lib_subdir']
+        if src.exists():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+            print(f"✓ Copied plugins ({len(list(dst.glob('*')))} files)")
+        else:
+            print(f"⚠ Warning: Plugins not found at {src}")
+        return
+
+    # New format: copy specific DLLs from set
+    print(f"\nCopying {len(plugin_paths)} plugin(s) to project...")
+
+    # Create destination directory
+    dst_dir = FMOD_LIB_DIR / "plugins" / config['lib_subdir']
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy each specified plugin DLL
+    copied_count = 0
+    for plugin_path in plugin_paths:
+        # Full path from source root
+        src_file = source_root / plugin_path
+
+        if src_file.exists():
+            # Copy only the DLL file, not the directory structure
+            dst_file = dst_dir / src_file.name
+            shutil.copy2(src_file, dst_file)
+            print(f"  ✓ {src_file.name}")
+            copied_count += 1
+        else:
+            print(f"  ✗ {src_file.name} not found at {plugin_path}")
+
+    print(f"✓ Copied {copied_count}/{len(plugin_paths)} plugin(s)")
+
+
+def main():
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: python install_fmod_api.py <installer_file> [--delete-installer]")
+        print("Example: python install_fmod_api.py fmodstudioapi20312win-installer.exe")
+        print("Example: python install_fmod_api.py fmodstudioapi20312win-installer.exe --delete-installer")
+        print("\nOptions:")
+        print("  --delete-installer    Delete the installer file after successful installation")
+        sys.exit(1)
+
+    installer_path = Path(sys.argv[1])
+    delete_installer = len(sys.argv) == 3 and sys.argv[2] == '--delete-installer'
+
+    # Validate installer exists
+    if not installer_path.is_file():
+        print(f"Error: Installer not found: {installer_path}")
+        sys.exit(1)
+
+    print(f"FMOD API Installer for CI/CD")
+    print(f"Installer: {installer_path.name}")
+    if delete_installer:
+        print("Delete installer: Yes")
+
+    # Detect platform
+    try:
+        platform = detect_platform(installer_path)
+        print(f"Platform: {platform}")
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    # Create temporary directory
+    temp_dir = Path(tempfile.mkdtemp(prefix="fmod_install_"))
+    print(f"Temp directory: {temp_dir}")
+
+    try:
+        # Extract installer
+        if platform == 'windows':
+            extract_windows_installer(installer_path, temp_dir)
+        elif platform == 'linux':
+            extract_linux_tarball(installer_path, temp_dir)
+        elif platform == 'apple':
+            extract_macos_dmg(installer_path, temp_dir)
+
+        # Copy API files to project
+        copy_api_files(temp_dir, platform)
+
+        print("\n✓ Installation complete!")
+        print(f"FMOD API files copied to: {FMOD_LIB_DIR}")
+
+        # Delete installer if requested
+        if delete_installer:
+            print("\nDeleting installer...")
+            installer_path.unlink()
+            print(f"✓ Deleted {installer_path.name}")
+
+    except Exception as e:
+        print(f"\n✗ Error: {e}")
+        sys.exit(1)
+    finally:
+        # Cleanup temporary directory
+        print("\nCleaning up...")
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        print("✓ Temporary files removed")
+
+
+if __name__ == "__main__":
+    main()
