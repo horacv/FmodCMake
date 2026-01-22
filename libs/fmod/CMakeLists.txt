@@ -37,16 +37,15 @@ endif()
 # Add more target platforms here with an elseif ()
 if (WIN32 AND MSVC)
     set_property(TARGET fmod_core PROPERTY IMPORTED_LOCATION
-            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/x64/${FMOD_LIB_NAME}.dll")
+            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/win_x64/${FMOD_LIB_NAME}.dll")
     set_property(TARGET fmod_core PROPERTY IMPORTED_IMPLIB
-            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/x64/${FMOD_LIB_NAME}_vc.lib")
+            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/win_x64/${FMOD_LIB_NAME}_vc.lib")
     set_property(TARGET fmod_studio PROPERTY IMPORTED_LOCATION
-            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/x64/${FMOD_STUDIO_LIB_NAME}.dll")
+            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/win_x64/${FMOD_STUDIO_LIB_NAME}.dll")
     set_property(TARGET fmod_studio PROPERTY IMPORTED_IMPLIB
-            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/x64/${FMOD_STUDIO_LIB_NAME}_vc.lib")
-    set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/x64")
+            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/win_x64/${FMOD_STUDIO_LIB_NAME}_vc.lib")
+    set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/win_x64")
     target_compile_definitions(fmod_studio INTERFACE "AUDIO_PLATFORM=\"Desktop\"")
-
 elseif (APPLE)
     set_property(TARGET fmod_core PROPERTY IMPORTED_LOCATION
             "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/apple/lib${FMOD_LIB_NAME}.dylib")

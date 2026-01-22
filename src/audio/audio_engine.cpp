@@ -527,7 +527,7 @@ FMOD_RESULT AudioEngine::StudioSystemCallback(FMOD_STUDIO_SYSTEM* system, FMOD_S
 			// std::cout << "FMOD UPDATE POST" << std::endl; // Commented out to not spam the console
 			break;
 		case FMOD_STUDIO_SYSTEM_CALLBACK_BANK_UNLOAD:
-			std::cout << "FMOD BANK UNLOADED: " << std::endl;
+			std::cout << "FMOD BANK UNLOADED " << std::endl;
 			break;
 		case FMOD_STUDIO_SYSTEM_CALLBACK_LIVEUPDATE_CONNECTED:
 			std::cout << "FMOD LIVE UPDATE CONNECTED" << std::endl;

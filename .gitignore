@@ -10,3 +10,4 @@ libs/fmod/**
 !libs/fmod/**/
 !libs/fmod/**/CMakeLists.txt
 !libs/fmod/**/readme.md
+!libs/fmod/**/dummy.txt

@@ -16,11 +16,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 
 add_executable(FmodCmake
         src/main.cpp
+        src/audio/audio_config.h
         src/audio/audio_engine.cpp
         src/audio/audio_engine.h
-        src/core/game.h
-        src/core/game.cpp
-        src/audio/audio_config.h
+        src/app/game.h
+        src/app/game.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

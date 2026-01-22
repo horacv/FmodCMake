@@ -1,8 +1,8 @@
 add_library(raylib SHARED IMPORTED GLOBAL)
 
 if (WIN32 AND MSVC)
-    set_property(TARGET raylib PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/lib/x64/raylib.dll")
-    set_property(TARGET raylib PROPERTY IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/lib/x64/raylib.lib")
+    set_property(TARGET raylib PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/lib/win_x64/raylib.dll")
+    set_property(TARGET raylib PROPERTY IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/lib/win_x64/raylib.lib")
 elseif (APPLE)
     set_property(TARGET raylib PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/lib/apple/libraylib.dylib")
 endif()
