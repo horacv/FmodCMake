@@ -12,7 +12,7 @@ FMOD_DOWNLOAD_BASE = "https://www.fmod.com/api-get-download-link"
 
 # Platform configuration
 PLATFORM_CONFIG = {
-    'apple': {
+    'mac': {
         'filename': 'fmodstudioapi{version}mac-installer.dmg',
         'path': 'files/fmodstudio/api/Mac/',
     },
@@ -51,7 +51,7 @@ def main():
     # Validate arguments
     if len(sys.argv) != 5:
         print("Usage: python get_fmod_api.py <username> <password> <platform> <api_version>")
-        print("Platforms: apple, linux, windows")
+        print("Platforms: mac, linux, windows")
         print("Example: python get_fmod_api.py user@example.com password123 windows 20227")
         sys.exit(1)
 
@@ -70,7 +70,7 @@ def main():
     config = PLATFORM_CONFIG[platform]
     filename = config['filename'].format(version=api_version)
 
-    # Build download URL (fix HTML entity)
+    # Build download URL
     download_url = (
         f"{FMOD_DOWNLOAD_BASE}?"
         f"path={config['path']}&"
@@ -107,7 +107,7 @@ def main():
 
         print("✓ Download link obtained")
 
-        # Step 3: Download file
+        # Step 3: Download the file
         print(f"Downloading {filename}...")
         file_size = download_with_progress(url, filename)
 

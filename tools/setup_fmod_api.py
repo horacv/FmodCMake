@@ -33,7 +33,7 @@ def main():
         print("FMOD Studio API Complete Setup")
         print("=" * 50)
         print("\nUsage: python setup_fmod_api.py <username> <password> <platform> <api_version> [--delete-installer]")
-        print("\nPlatforms: apple, linux, windows")
+        print("\nPlatforms: mac, linux, windows")
         print("\nOptions:")
         print("  --delete-installer    Delete the installer file after installation (default: keep)")
         print("\nExample:")
@@ -73,7 +73,7 @@ def main():
         installer_patterns = {
             'windows': f'fmodstudioapi{api_version}win-installer.exe',
             'linux': f'fmodstudioapi{api_version}linux.tar.gz',
-            'apple': f'fmodstudioapi{api_version}mac-installer.dmg'
+            'mac': f'fmodstudioapi{api_version}mac-installer.dmg'
         }
 
         installer_name = installer_patterns.get(platform)
@@ -96,7 +96,7 @@ def main():
             print(f"Installer cleaned up: {installer_name}")
         else:
             print(f"Installer preserved: {installer_name}")
-        print("\nYou can now build your project with FMOD support.")
+        print("\nYou can now build your project with FMOD")
 
     except Exception as e:
         print("\n" + "=" * 60)

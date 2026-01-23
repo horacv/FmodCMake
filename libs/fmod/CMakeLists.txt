@@ -46,12 +46,19 @@ if (WIN32 AND MSVC)
             "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/win_x64/${FMOD_STUDIO_LIB_NAME}_vc.lib")
     set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/win_x64")
     target_compile_definitions(fmod_studio INTERFACE "AUDIO_PLATFORM=\"Desktop\"")
-elseif (APPLE)
+elseif (APPLE AND NOT IOS)
     set_property(TARGET fmod_core PROPERTY IMPORTED_LOCATION
-            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/apple/lib${FMOD_LIB_NAME}.dylib")
+            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/mac/lib${FMOD_LIB_NAME}.dylib")
     set_property(TARGET fmod_studio PROPERTY IMPORTED_LOCATION
-            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/apple/lib${FMOD_STUDIO_LIB_NAME}.dylib")
-    set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/apple")
+            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/mac/lib${FMOD_STUDIO_LIB_NAME}.dylib")
+    set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/mac")
+    target_compile_definitions(fmod_studio INTERFACE "AUDIO_PLATFORM=\"Desktop\"")
+elseif (LINUX)
+    set_property(TARGET fmod_core PROPERTY IMPORTED_LOCATION
+            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/linux_x64/${FMOD_LIB_NAME}.so")
+    set_property(TARGET fmod_studio PROPERTY IMPORTED_LOCATION
+            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/linux_x64/${FMOD_STUDIO_LIB_NAME}.so")
+    set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/linux_x64")
     target_compile_definitions(fmod_studio INTERFACE "AUDIO_PLATFORM=\"Desktop\"")
 endif ()
 

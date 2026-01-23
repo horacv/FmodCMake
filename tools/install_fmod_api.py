@@ -42,8 +42,8 @@ PLATFORM_CONFIG = {
             }
         }
     },
-    'apple': {
-        'lib_subdir': 'apple',
+    'mac': {
+        'lib_subdir': 'mac',
         'api_structure': {
             'core_inc_dir': 'api/core/inc',
             'core_lib_dir': 'api/core/lib',
@@ -62,17 +62,17 @@ PLATFORM_CONFIG = {
 def detect_platform(installer_path):
     """Detect platform from installer filename."""
     name = installer_path.name.lower()
-    if 'win' in name or name.endswith('.exe'):
+    if 'win' in name and name.endswith('.exe'):
         return 'windows'
-    elif 'linux' in name or name.endswith('.tar.gz'):
+    elif 'linux' in name and name.endswith('.tar.gz'):
         return 'linux'
-    elif 'mac' in name or 'osx' in name or name.endswith('.dmg'):
-        return 'apple'
+    elif 'mac' in name and name.endswith('.dmg'):
+        return 'mac'
     else:
         raise ValueError(f"Cannot detect platform from installer: {installer_path.name}")
 
 
-def extract_windows_installer(installer_path, temp_dir):
+def extract_windows_exe(installer_path, temp_dir):
     """Extract Windows .exe installer using available methods."""
     print("Extracting Windows installer...")
 
@@ -85,7 +85,7 @@ def extract_windows_installer(installer_path, temp_dir):
 
     for seven_zip in seven_zip_paths:
         try:
-            result = subprocess.run(
+            subprocess.run(
                 [seven_zip, 'x', str(installer_path), f'-o{temp_dir}', '-y'],
                 check=True,
                 capture_output=True,
@@ -96,18 +96,6 @@ def extract_windows_installer(installer_path, temp_dir):
         except (FileNotFoundError, subprocess.CalledProcessError) as e:
             continue
 
-    # Try innounp (InnoSetup unpacker)
-    try:
-        subprocess.run(
-            ['innounp', '-x', '-d', str(temp_dir), str(installer_path)],
-            check=True,
-            capture_output=True
-        )
-        print("✓ Extracted with innounp")
-        return
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        pass
-
     # Error message with helpful information
     raise RuntimeError(
         "Cannot extract Windows installer. Please install 7-Zip:\n"
@@ -115,16 +103,17 @@ def extract_windows_installer(installer_path, temp_dir):
         "  2. Install to default location\n"
         "  3. Re-run this script\n\n"
         "For CI/CD, install 7-Zip in your pipeline:\n"
+        "  winget install -e --id 7zip.7zip\n"
         "  choco install 7zip  (Chocolatey)\n"
         "  or use GitHub Actions: actions/setup-7zip"
     )
 
 
-def extract_linux_tarball(installer_path, temp_dir):
+def extract_linux_tar(installer_path, temp_dir):
     """Extract Linux .tar.gz archive."""
-    print("Extracting Linux tarball...")
+    print("Extracting Linux tar...")
     shutil.unpack_archive(str(installer_path), temp_dir)
-    print("✓ Extracted tarball")
+    print("✓ Extracted tar")
 
 
 def extract_macos_dmg(installer_path, temp_dir):
@@ -209,7 +198,7 @@ def copy_api_files(temp_dir, platform):
     else:
         print(f"⚠ Warning: Studio libraries not found at {src}")
 
-    # Copy plugins - handled by separate function
+    # Copy plugins
     copy_plugins(source_root, platform)
 
 
@@ -228,14 +217,14 @@ def copy_plugins(source_root, platform):
     # Handle both set and string formats (for backwards compatibility)
     if isinstance(plugin_paths, str):
         # Old format: copy entire directory
-        src = source_root / plugin_paths
-        dst = FMOD_LIB_DIR / "plugins" / config['lib_subdir']
-        if src.exists():
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-            print(f"✓ Copied plugins ({len(list(dst.glob('*')))} files)")
+        source = source_root / plugin_paths
+        destination = FMOD_LIB_DIR / "plugins" / config['lib_subdir']
+        if source.exists():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(source, destination, dirs_exist_ok=True)
+            print(f"✓ Copied plugins ({len(list(destination.glob('*')))} files)")
         else:
-            print(f"⚠ Warning: Plugins not found at {src}")
+            print(f"⚠ Warning: Plugins not found at {source}")
         return
 
     # New format: copy specific DLLs from set
@@ -280,33 +269,33 @@ def main():
         print(f"Error: Installer not found: {installer_path}")
         sys.exit(1)
 
-    print(f"FMOD API Installer for CI/CD")
-    print(f"Installer: {installer_path.name}")
-    if delete_installer:
-        print("Delete installer: Yes")
+    print("\n" + "=" * 60)
+    print(f"FMOD API Installer")
+    print("\n" + "=" * 60)
 
     # Detect platform
     try:
         platform = detect_platform(installer_path)
+        print(f"Installer found: {installer_path.name}")
         print(f"Platform: {platform}")
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
 
-    # Create temporary directory
-    temp_dir = Path(tempfile.mkdtemp(prefix="fmod_install_"))
+    # Create a temporary directory
+    temp_dir = Path(tempfile.mkdtemp(prefix="temp_fmod_install_"))
     print(f"Temp directory: {temp_dir}")
 
     try:
         # Extract installer
         if platform == 'windows':
-            extract_windows_installer(installer_path, temp_dir)
+            extract_windows_exe(installer_path, temp_dir)
         elif platform == 'linux':
-            extract_linux_tarball(installer_path, temp_dir)
-        elif platform == 'apple':
+            extract_linux_tar(installer_path, temp_dir)
+        elif platform == 'mac':
             extract_macos_dmg(installer_path, temp_dir)
 
-        # Copy API files to project
+        # Copy API files to the project
         copy_api_files(temp_dir, platform)
 
         print("\n✓ Installation complete!")
@@ -314,17 +303,17 @@ def main():
 
         # Delete installer if requested
         if delete_installer:
-            print("\nDeleting installer...")
+            print("\n[--delete-installer] flag passed. Deleting installer...")
             installer_path.unlink()
             print(f"✓ Deleted {installer_path.name}")
 
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\nError: {e}")
         sys.exit(1)
     finally:
         # Cleanup temporary directory
         print("\nCleaning up...")
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(temp_dir, ignore_errors=False)
         print("✓ Temporary files removed")
 
 

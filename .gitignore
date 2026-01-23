@@ -4,6 +4,7 @@
 *Makefile
 *CMakeFiles
 *.cmake
+*.exe
 
 libs/fmod/**
 !libs/fmod/
