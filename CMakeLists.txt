@@ -28,8 +28,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/s
 # Fix for Raylib linker warning in MSVC Debug builds
 # Raylib creates a linker warning when running on the debug config only.
 # This excludes the MSVCRT library to prevent conflicts with the C runtime.
-if (MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_options(FmodCmake PRIVATE /NODEFAULTLIB:MSVCRT)
+if (MSVC)
+    target_link_options(FmodCmake PRIVATE $<$<CONFIG:Debug>:/NODEFAULTLIB:MSVCRT>)
 endif()
 
 function(CopyLibraryToTarget LIB_NAME TARGET_NAME)
