@@ -55,9 +55,9 @@ elseif (APPLE AND NOT IOS)
     target_compile_definitions(fmod_studio INTERFACE "AUDIO_PLATFORM=\"Desktop\"")
 elseif (LINUX)
     set_property(TARGET fmod_core PROPERTY IMPORTED_LOCATION
-            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/linux_x64/${FMOD_LIB_NAME}.so")
+            "${CMAKE_CURRENT_SOURCE_DIR}/core/lib/linux_x64/lib${FMOD_LIB_NAME}.so")
     set_property(TARGET fmod_studio PROPERTY IMPORTED_LOCATION
-            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/linux_x64/${FMOD_STUDIO_LIB_NAME}.so")
+            "${CMAKE_CURRENT_SOURCE_DIR}/studio/lib/linux_x64/lib${FMOD_STUDIO_LIB_NAME}.so")
     set(FMOD_PLUGINS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/linux_x64")
     target_compile_definitions(fmod_studio INTERFACE "AUDIO_PLATFORM=\"Desktop\"")
 endif ()
