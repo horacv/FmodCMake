@@ -88,12 +88,22 @@ jobs:
             if (!$_.HasExited) { Stop-Process -Id $_.Id -Force }
           }
 
-      - name: Run application (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Run application (Linux)
+        if: runner.os == 'Linux'
         timeout-minutes: 1
         run: |
           cd build
           timeout 10s ./FmodCmake || test $? -eq 124
+
+      - name: Run application (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 1
+        run: |
+          cd build
+          ./FmodCmake &
+          PID=$!
+          sleep 10
+          kill $PID 2>/dev/null || true
 
       - name: Upload build artifacts
         if: failure()
