@@ -76,7 +76,7 @@ jobs:
         timeout-minutes: 1
         run: |
           cd build
-          Start-Process -FilePath ".\${{ matrix.build_type }}\FmodCmake.exe" -PassThru | ForEach-Object {
+          Start-Process -FilePath ".\FmodCmake.exe" -PassThru | ForEach-Object {
             Start-Sleep -Seconds 10
             if (!$_.HasExited) { Stop-Process -Id $_.Id -Force }
           }
