@@ -56,7 +56,8 @@ jobs:
             libgl1-mesa-dev \
             libglu1-mesa-dev \
             libxcursor-dev \
-            libxinerama-dev
+            libxinerama-dev \
+            xvfb
 
       - name: Setup FMOD API
         env:
@@ -108,7 +109,7 @@ jobs:
         timeout-minutes: 1
         run: |
           cd build
-          timeout 10s ./FmodCmake || test $? -eq 124
+          xvfb-run -a timeout 10s ./FmodCmake || test $? -eq 124
 
       - name: Run application (macOS)
         if: runner.os == 'macOS'
