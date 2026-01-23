@@ -97,7 +97,7 @@ class AudioEngine
 
 	private:
 		static std::unique_ptr<AudioEngine> sInstance;
-		StudioSystem* StudioSystem;
+		StudioSystem* mStudioSystem;
 		bool bMainBanksLoaded;
 
 		std::string mSoundBankRootDirectory;
