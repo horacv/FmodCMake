@@ -1,6 +1,8 @@
 
 # FmodCMake
 
+[![Build And Test](https://github.com/horacv/FmodCMake/actions/workflows/build-test.yml/badge.svg)](https://github.com/horacv/FmodCMake/actions/workflows/build-test.yml)
+
 A CMake template project that demonstrates integration of Firelight Technologies' FMOD audio engine with any software project.
 
 ![screenshot.png](images/screenshot.png)
