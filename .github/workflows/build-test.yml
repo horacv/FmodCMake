@@ -51,6 +51,13 @@ jobs:
         run: |
           python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.os_config.platform }} ${{ matrix.os_config.api_version }} --delete-installer
 
+      - name: Fix symlinks (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd libs/raylib/lib/mac
+          ln -sf libraylib.5.5.0.dylib libraylib.dylib
+          ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
         run: |
