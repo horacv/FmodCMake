@@ -1,0 +1,132 @@
+name: Build and Test (Windows, Linux, macOS)
+
+on:
+  push:
+    branches: [ master, CICD_feature ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+        os_config:
+          - os: windows-latest
+            platform: windows
+            api_version: "20312"
+          - os: ubuntu-latest
+            platform: linux
+            api_version: "20312"
+          - os: macos-latest
+            platform: mac
+            api_version: "20312"
+
+    runs-on: ${{ matrix.os_config.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Install 7-Zip (Windows)
+        if: runner.os == 'Windows'
+        run: choco install 7zip -y
+
+        # Working on GNU Linux: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            libxcursor-dev \
+            libxinerama-dev \
+            xvfb
+
+      - name: Setup FMOD API
+        env:
+          FMOD_USERNAME: ${{ secrets.FMOD_USERNAME }}
+          FMOD_PASSWORD: ${{ secrets.FMOD_PASSWORD }}
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.os_config.platform }} ${{ matrix.os_config.api_version }} --delete-installer
+
+      - name: Fix symlinks (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd libs/raylib/lib/mac
+          ln -sf libraylib.5.5.0.dylib libraylib.dylib
+          ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -B build
+
+      - name: Configure CMake (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cmake --build build
+
+      - name: Run application (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 1
+        run: |
+          cd build
+          Start-Process -FilePath ".\FmodCmake.exe" -PassThru | ForEach-Object {
+            Start-Sleep -Seconds 10
+            if (!$_.HasExited) { Stop-Process -Id $_.Id -Force }
+          }
+
+      - name: Run application (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 1
+        run: |
+          cd build
+          xvfb-run -a timeout 10s ./FmodCmake || test $? -eq 124
+
+      - name: Run application (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 1
+        run: |
+          cd build
+          ./FmodCmake &
+          PID=$!
+          sleep 10
+          kill $PID 2>/dev/null || true
+
+      - name: Upload build artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.os_config.platform }}-${{ matrix.build_type }}
+          path: |
+            build/
+            !build/**/*.o
+            !build/**/*.obj

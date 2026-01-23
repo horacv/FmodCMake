@@ -3,6 +3,8 @@
 
 A CMake template project that demonstrates integration of Firelight Technologies' FMOD audio engine with any software project.
 
+[![Build And Test](https://github.com/horacv/FmodCMake/actions/workflows/build-test.yml/badge.svg)](https://github.com/horacv/FmodCMake/actions/workflows/build-test.yml)
+
 ![screenshot.png](images/screenshot.png)
 
 ### Verified FMOD Programmers API Version: 2.03.12

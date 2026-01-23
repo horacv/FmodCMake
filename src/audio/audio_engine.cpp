@@ -79,7 +79,7 @@ namespace {
 }
 
 AudioEngine::AudioEngine()
-: StudioSystem(nullptr)
+: mStudioSystem(nullptr)
 , bMainBanksLoaded(false)
 {}
 
@@ -100,13 +100,13 @@ bool AudioEngine::Initialize()
 	if (IsInitialized()) { return true; } // Already Initialized
 
 	AudioEngine& audioEngine = Get();
-	if (StudioSystem::create(&audioEngine.StudioSystem) != FMOD_OK) { return false; }
+	if (StudioSystem::create(&audioEngine.mStudioSystem) != FMOD_OK) { return false; }
 
 	AudioConfig config;
 	if (!config.LoadConfigFile("config/audio_engine.ini")) { return false; }
 
 	CoreSystem* coreSystem = nullptr;
-	if (audioEngine.StudioSystem->getCoreSystem(&coreSystem) != FMOD_OK) { return false; }
+	if (audioEngine.mStudioSystem->getCoreSystem(&coreSystem) != FMOD_OK) { return false; }
 
 	FMOD_SPEAKERMODE outputFormat = ParseSpeakerMode(config.GetString("System", "OutputFormat", "Stereo"));
 	FMOD_OUTPUTTYPE outputType = ParseOutputType(config.GetString("System", "OutputType", "AutoDetect"));
@@ -164,12 +164,12 @@ bool AudioEngine::Initialize()
 	FMOD::Debug_Initialize(loggingLevel, FMOD_DEBUG_MODE_CALLBACK, AudioEngineLogCallback);
 #endif
 
-	if (audioEngine.StudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags, initDriverData) != FMOD_OK) { return false; }
+	if (audioEngine.mStudioSystem->initialize(maxChannelCount,studio_init_flags, init_flags, initDriverData) != FMOD_OK) { return false; }
 
 	// AUDIO ENGINE CALLBACK
 
-	audioEngine.StudioSystem->setUserData(&audioEngine);
-	audioEngine.StudioSystem->setCallback(StudioSystemCallback, FMOD_STUDIO_SYSTEM_CALLBACK_ALL);
+	audioEngine.mStudioSystem->setUserData(&audioEngine);
+	audioEngine.mStudioSystem->setCallback(StudioSystemCallback, FMOD_STUDIO_SYSTEM_CALLBACK_ALL);
 
 	// ADDITIONAL PLUGINS
 	// Registering the resonance dynamic library as an additional plugin
@@ -187,15 +187,15 @@ bool AudioEngine::Initialize()
 
 	audioEngine.bMainBanksLoaded = bIsMainBankLoaded && bIsStringsBankLoaded;
 
-	return audioEngine.StudioSystem->isValid() && audioEngine.bMainBanksLoaded;
+	return audioEngine.mStudioSystem->isValid() && audioEngine.bMainBanksLoaded;
 }
 
 void AudioEngine::Terminate()
 {
-	if (AudioEngine& audioEngine = Get(); audioEngine.StudioSystem->isValid())
+	if (AudioEngine& audioEngine = Get(); audioEngine.mStudioSystem->isValid())
 	{
-		audioEngine.StudioSystem->release();
-		audioEngine.StudioSystem = nullptr;
+		audioEngine.mStudioSystem->release();
+		audioEngine.mStudioSystem = nullptr;
 #if WIN32 // Refer to: https://www.fmod.com/docs/2.03/api/platforms-win.html#com
 		CoUninitialize();
 #endif
@@ -204,13 +204,13 @@ void AudioEngine::Terminate()
 
 void AudioEngine::Update()
 {
-	if (IsInitialized()) { Get().StudioSystem->update(); }
+	if (IsInitialized()) { Get().mStudioSystem->update(); }
 }
 
 bool AudioEngine::IsInitialized()
 {
 	const AudioEngine& audioEngine = Get();
-	return audioEngine.StudioSystem && audioEngine.StudioSystem->isValid() && audioEngine.bMainBanksLoaded;
+	return audioEngine.mStudioSystem && audioEngine.mStudioSystem->isValid() && audioEngine.bMainBanksLoaded;
 }
 
 // Soundbanks
@@ -229,10 +229,10 @@ bool AudioEngine::LoadSoundBankFile(const std::string& filePath)
 bool AudioEngine::LoadSoundBankFile(const std::string& filePath, AudioBank*& outBankPtr)
 {
 	const AudioEngine& audioEngine = Get();
-	if (!audioEngine.StudioSystem->isValid()) { return false; }
+	if (!audioEngine.mStudioSystem->isValid()) { return false; }
 
 	const std::string fullBankPath = audioEngine.mSoundBankRootDirectory + filePath;
-	const FMOD_RESULT result = audioEngine.StudioSystem->loadBankFile(fullBankPath.c_str(),
+	const FMOD_RESULT result = audioEngine.mStudioSystem->loadBankFile(fullBankPath.c_str(),
 		FMOD_STUDIO_LOAD_BANK_NORMAL, &outBankPtr);
 
 	return result == FMOD_OK;
@@ -241,10 +241,10 @@ bool AudioEngine::LoadSoundBankFile(const std::string& filePath, AudioBank*& out
 bool AudioEngine::UnloadSoundBank(const std::string& studioPath)
 {
 	const AudioEngine& audioEngine = Get();
-	if (!audioEngine.StudioSystem->isValid()) { return false; }
+	if (!audioEngine.mStudioSystem->isValid()) { return false; }
 
 	FMOD::Studio::Bank* bank = nullptr;
-	if (audioEngine.StudioSystem->getBank(studioPath.c_str(), &bank) == FMOD_OK)
+	if (audioEngine.mStudioSystem->getBank(studioPath.c_str(), &bank) == FMOD_OK)
 	{
 		return UnloadSoundBank(bank);
 	}
@@ -254,7 +254,7 @@ bool AudioEngine::UnloadSoundBank(const std::string& studioPath)
 
 bool AudioEngine::UnloadSoundBank(AudioBank* bank)
 {
-	if (!(Get().StudioSystem->isValid() && bank)) { return false; }
+	if (!(Get().mStudioSystem->isValid() && bank)) { return false; }
 	const FMOD_RESULT result = bank->unload();
 	return result == FMOD_OK;
 }
@@ -269,7 +269,7 @@ AudioInstance* AudioEngine::PlayAudioEvent(const std::string& studioPath, const 
 	FMOD::Studio::EventDescription* description = nullptr;
 	AudioInstance* instance = nullptr;
 
-	FMOD_RESULT result = Get().StudioSystem->getEvent(studioPath.c_str(), &description);
+	FMOD_RESULT result = Get().mStudioSystem->getEvent(studioPath.c_str(), &description);
 	if (result != FMOD_OK) { return nullptr; }
 
 	result = description->createInstance(&instance);
@@ -342,7 +342,7 @@ bool AudioEngine::SetGlobalParameterByName(const std::string& name,
 			const float value, const bool bIgnoreSeekSpeed)
 {
 	if (!IsInitialized()) { return false; }
-	const FMOD_RESULT result = Get().StudioSystem->setParameterByName(name.c_str(), value, bIgnoreSeekSpeed);
+	const FMOD_RESULT result = Get().mStudioSystem->setParameterByName(name.c_str(), value, bIgnoreSeekSpeed);
 	return result == FMOD_OK;
 }
 
@@ -350,7 +350,7 @@ bool AudioEngine::SetGlobalParameterByNameWithLabel(const std::string& name,
 	const std::string& label, const bool bIgnoreSeekSpeed)
 {
 	if (!IsInitialized()) { return false; }
-	const FMOD_RESULT result = Get().StudioSystem->setParameterByNameWithLabel(name.c_str(), label.c_str(), bIgnoreSeekSpeed);
+	const FMOD_RESULT result = Get().mStudioSystem->setParameterByNameWithLabel(name.c_str(), label.c_str(), bIgnoreSeekSpeed);
 	return result == FMOD_OK;
 }
 
@@ -376,7 +376,7 @@ bool AudioEngine::SetParameterByNameWithLabel(AudioInstance* instance,
 bool AudioEngine::GetBus(const std::string& studioPath, AudioBus*& outBusPtr)
 {
 	if (!IsInitialized()) { return false; }
-	const FMOD_RESULT result = Get().StudioSystem->getBus(studioPath.c_str(), &outBusPtr);
+	const FMOD_RESULT result = Get().mStudioSystem->getBus(studioPath.c_str(), &outBusPtr);
 	return result == FMOD_OK;
 }
 
@@ -440,7 +440,7 @@ bool AudioEngine::BusStopAllAudioEvents(AudioBus* bus, const bool bAllowFadeOut)
 bool AudioEngine::GetVCA(const std::string& studioPath, AudioVCA*& outVCAPtr)
 {
 	if (!IsInitialized()) { return false; }
-	const FMOD_RESULT result = Get().StudioSystem->getVCA(studioPath.c_str(), &outVCAPtr);
+	const FMOD_RESULT result = Get().mStudioSystem->getVCA(studioPath.c_str(), &outVCAPtr);
 	return result == FMOD_OK;
 }
 
@@ -461,10 +461,10 @@ bool AudioEngine::VCA_GetVolume(const AudioVCA* vca, float& outVolume, float& ou
 
 void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath)
 {
-	if (!StudioSystem->isValid()) { return; }
+	if (!mStudioSystem->isValid()) { return; }
 
 	FMOD::System* coreSystem = nullptr;
-	StudioSystem->getCoreSystem(&coreSystem);
+	mStudioSystem->getCoreSystem(&coreSystem);
 	coreSystem->setPluginPath(rootPath.c_str());
 
 	for (const auto& additionalPluginName : pluginNames)
@@ -482,10 +482,10 @@ void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& plug
 
 bool AudioEngine::GetAudioDriverIndexByName(const std::string& audioDriverName, int& outDriverIndex) const
 {
-	if (!StudioSystem->isValid()) { return false; }
+	if (!mStudioSystem->isValid()) { return false; }
 
 	FMOD::System* coreSystem = nullptr;
-	StudioSystem->getCoreSystem(&coreSystem);
+	mStudioSystem->getCoreSystem(&coreSystem);
 
 	if (!coreSystem) { return false; }
 
