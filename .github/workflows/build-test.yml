@@ -11,9 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
         build_type: [Debug, Release]
-        include:
+        os_config:
           - os: windows-latest
             platform: windows
             api_version: "20312"
@@ -24,7 +23,7 @@ jobs:
             platform: mac
             api_version: "20312"
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os_config.os }}
 
     steps:
       - name: Checkout repository
@@ -50,15 +49,27 @@ jobs:
           FMOD_PASSWORD: ${{ secrets.FMOD_PASSWORD }}
           PYTHONIOENCODING: utf-8
         run: |
-          python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.platform }} ${{ matrix.api_version }} --delete-installer
+          python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.os_config.platform }} ${{ matrix.os_config.api_version }} --delete-installer
 
-      - name: Configure CMake
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -B build
+
+      - name: Configure CMake (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
-      - name: Build
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
         run: |
           cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cmake --build build
 
       - name: Run application (Windows)
         if: runner.os == 'Windows'
@@ -81,7 +92,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs-${{ matrix.os }}-${{ matrix.build_type }}
+          name: build-logs-${{ matrix.os_config.platform }}-${{ matrix.build_type }}
           path: |
             build/
             !build/**/*.o
