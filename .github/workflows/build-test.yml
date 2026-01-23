@@ -48,6 +48,7 @@ jobs:
         env:
           FMOD_USERNAME: ${{ secrets.FMOD_USERNAME }}
           FMOD_PASSWORD: ${{ secrets.FMOD_PASSWORD }}
+          PYTHONIOENCODING: utf-8
         run: |
           python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.platform }} ${{ matrix.api_version }} --delete-installer
 
