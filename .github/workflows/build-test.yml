@@ -43,6 +43,21 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install 7zip -y
 
+        # Working on GNU Linux: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            libxcursor-dev \
+            libxinerama-dev
+
       - name: Setup FMOD API
         env:
           FMOD_USERNAME: ${{ secrets.FMOD_USERNAME }}
