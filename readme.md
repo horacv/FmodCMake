@@ -22,15 +22,17 @@ This project showcases a basic integration between FMOD and raylib, featuring:
 
 - CMake 3.x or higher
 - FMOD Studio and FMOD Core API
-- raylib development libraries (included)
+- raylib development libraries
 - C++20 compatible compiler.
 
 ## Building the Project
 
 1. Clone or download the repository
-2. Copy the FMOD API and the libraries for your target platform
-3. Configue the project by using the command line or an IDE
-4. Build using your favorite IDE and compiler
+2. Download the [FMOD programmers API](https://www.fmod.com/download) and [raylib](https://github.com/raysan5/raylib/releases)
+3. Copy the FMOD API and raylib libraries for your target platform \
+(You can automate this process by using the provided Python scripts in the `tools/` [directory](tools/readme.md))
+4. Configue the project by using the command line or an IDE
+5. Build using your favorite IDE and compiler
 
 ### CMake build commands:
 
@@ -54,11 +56,12 @@ Note that some IDEs can configure and build your project without using the comma
     - `CMakeLists.txt` - CMake configuration file for raylib
   - `fmod/`
     - `core` - FMOD Core header files and static and dynamic libraries
-    - `plugins` - Additional FMOD custom plugins (google resonance included)
+    - `plugins` - Additional FMOD custom plugins (google resonance, fmod haptics)
     - `studio` - FMOD Studio header files and static and dynamic libraries
     - `CMakeLists.txt` - CMake configuration file for FMOD
   - `CMakeLists.txt` - File that exposes the libraries to the main configuration file
 - `src/` - Source code directory
+- `tools/` - Python scripts for installing libraries
 
 ## Official Documentation and Helpful Links
 

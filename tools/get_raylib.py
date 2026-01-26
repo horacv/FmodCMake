@@ -45,9 +45,9 @@ def download_with_progress(url, filepath, chunk_size=65536):
 def main():
     # Validate arguments
     if len(sys.argv) != 3:
-        print("Usage: python get_fmod_api.py <platform> <raylib_version>")
+        print("Usage: python get_raylib.py <platform> <raylib_version>")
         print("Platforms: mac, linux, windows")
-        print("Example: python get_fmod_api.py windows 5.5")
+        print("Example: python get_raylib.py windows 5.5")
         sys.exit(1)
 
     platform = sys.argv[1]
