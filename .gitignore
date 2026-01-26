@@ -5,10 +5,13 @@
 *CMakeFiles
 *.cmake
 *.exe
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
 
-libs/fmod/**
-!libs/fmod/
-!libs/fmod/**/
-!libs/fmod/**/CMakeLists.txt
-!libs/fmod/**/readme.md
-!libs/fmod/**/dummy.txt
+
+libs/**
+!libs/**/**/CMakeLists.txt
+!libs/**/**/readme.md

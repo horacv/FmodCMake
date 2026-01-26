@@ -2,9 +2,9 @@ name: Build and Test (Windows, Linux, macOS)
 
 on:
   push:
-    branches: [ master, CICD_feature ]
+    branches: [ '**' ]
   pull_request:
-    branches: [ master ]
+    branches: [ '**' ]
 
 jobs:
   build-and-test:
@@ -15,13 +15,16 @@ jobs:
         os_config:
           - os: windows-latest
             platform: windows
-            api_version: "20312"
+            fmod_api_version: "20312"
+            raylib_version: "5.5"
           - os: ubuntu-latest
             platform: linux
-            api_version: "20312"
+            fmod_api_version: "20312"
+            raylib_version: "5.5"
           - os: macos-latest
             platform: mac
-            api_version: "20312"
+            fmod_api_version: "20312"
+            raylib_version: "5.5"
 
     runs-on: ${{ matrix.os_config.os }}
 
@@ -65,7 +68,13 @@ jobs:
           FMOD_PASSWORD: ${{ secrets.FMOD_PASSWORD }}
           PYTHONIOENCODING: utf-8
         run: |
-          python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.os_config.platform }} ${{ matrix.os_config.api_version }} --delete-installer
+          python tools/setup_fmod_api.py "${{ env.FMOD_USERNAME }}" "${{ env.FMOD_PASSWORD }}" ${{ matrix.os_config.platform }} ${{ matrix.os_config.fmod_api_version }} --delete-installer
+          
+      - name: Setup Raylib
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tools/setup_raylib.py "${{ matrix.os_config.platform }}" "${{ matrix.os_config.raylib_version }}" --delete-installer
 
       - name: Fix symlinks (macOS)
         if: runner.os == 'macOS'
