@@ -1,8 +1,8 @@
-#include "app/game.h"
+#include "app/app.h"
 
 int main(int argc, char* argv[])
 {
-	Game game;
+	Application game;
 	game.Initialize();
 	game.Run();
 	game.Terminate();

@@ -15,13 +15,55 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 
 add_executable(FmodCmake
-        src/main.cpp
+        src/app/app.cpp
+        src/app/app.h
         src/audio/audio_config.h
         src/audio/audio_engine.cpp
         src/audio/audio_engine.h
-        src/app/game.h
-        src/app/game.cpp
+        src/gui/gui.cpp
+        src/gui/gui.h
+        src/gui/gui_styles.c
+        src/gui/widgets/menus/main_menu.cpp
+        src/gui/widgets/menus/main_menu.h
+        src/gui/widgets/menus/main_menu_about.cpp
+        src/gui/widgets/menus/main_menu_about.h
+        src/gui/widgets/menus/main_menu_file.cpp
+        src/gui/widgets/menus/main_menu_file.h
+        src/gui/widgets/menus/main_menu_options.cpp
+        src/gui/widgets/menus/main_menu_options.h
+        src/gui/widgets/menus/main_menu_pages.cpp
+        src/gui/widgets/menus/main_menu_pages.h
+        src/gui/widgets/menus/main_menu_settings.cpp
+        src/gui/widgets/menus/main_menu_settings.h
+        src/gui/widgets/overlays/audio_info_overlay.cpp
+        src/gui/widgets/overlays/audio_info_overlay.h
+        src/gui/widgets/overlays/volume_overlay.cpp
+        src/gui/widgets/overlays/volume_overlay.h
+        src/gui/widgets/widget.h
+        src/input/input_events.h
+        src/media/media_framework.cpp
+        src/media/media_framework.h
+        src/media/media_framework_data.h
+        src/pages/page.h
+        src/pages/page_cover.cpp
+        src/pages/page_cover.h
+
+        src/main.cpp
+        src/pch.h
 )
+
+# Pre-Compiled headers section
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+    set(CMAKE_XCODE_GENERATE_SCHEME ON)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+            XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER YES
+            XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h"
+    )
+else()
+    target_precompile_headers(${PROJECT_NAME} PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:pch.h>
+    )
+endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
@@ -51,6 +93,9 @@ add_subdirectory(libs)
 # raylib
 target_link_libraries(${PROJECT_NAME} PUBLIC raylib)
 CopyLibraryToTarget(raylib ${PROJECT_NAME})
+
+# raygui
+target_link_libraries(${PROJECT_NAME} PUBLIC raygui)
 
 # FMOD Studio and FMOD Core (You need both!)
 target_link_libraries(${PROJECT_NAME} PUBLIC fmod_core)

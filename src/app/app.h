@@ -1,0 +1,33 @@
+#ifndef APP_HPP
+#define APP_HPP
+
+#include "audio/audio_engine.h"
+#include "input/input_events.h"
+#include "pages/page.h"
+
+class Application
+{
+	public:
+		Application();
+
+		void Initialize();
+		void Run();
+		void Terminate() const;
+		[[nodiscard]] bool IsRunning() const;
+
+	private:
+		bool mIsRunning;
+
+		std::shared_ptr<IPage> currentPage;
+		std::vector<std::shared_ptr<IPage>> mPagesPendingDestroy;
+		std::vector<InputEvent> mInputEventsCurrent;
+
+		void Update();
+		void ProcessEvents();
+		void Start() const;
+		void Render();
+
+		void ChangePage(const std::string_view& pageName);
+		void HandlePagesPendingDestroy();
+};
+#endif

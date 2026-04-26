@@ -17,14 +17,17 @@ jobs:
             platform: windows
             fmod_api_version: "20312"
             raylib_version: "5.5"
+            raygui_version: "4.0"
           - os: ubuntu-latest
             platform: linux
             fmod_api_version: "20312"
             raylib_version: "5.5"
+            raygui_version: "4.0"
           - os: macos-latest
             platform: mac
             fmod_api_version: "20312"
             raylib_version: "5.5"
+            raygui_version: "4.0"
 
     runs-on: ${{ matrix.os_config.os }}
 
@@ -75,6 +78,12 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: |
           python tools/setup_raylib.py "${{ matrix.os_config.platform }}" "${{ matrix.os_config.raylib_version }}" --delete-installer
+
+      - name: Setup RayGui
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tools/setup_raygui_sources.py "${{ matrix.os_config.raygui_version }}" --delete-installer
 
       - name: Fix symlinks (macOS)
         if: runner.os == 'macOS'

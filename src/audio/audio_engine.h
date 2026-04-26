@@ -3,22 +3,18 @@
 
 #include "fmod_studio.hpp"
 
-#include <memory>
-#include <string>
-#include <unordered_map>
-
 #include "audio_config.h"
 
 using StudioSystem = FMOD::Studio::System;
 using CoreSystem = FMOD::System;
 
-using AudioInstance = FMOD::Studio::EventInstance;
 using Audio3DAttributes = FMOD_3D_ATTRIBUTES;
 using AudioBank = FMOD::Studio::Bank;
 using AudioBus = FMOD::Studio::Bus;
-using AudioVCA = FMOD::Studio::VCA;
-using AudioEventCallback = FMOD_STUDIO_EVENT_CALLBACK;
 using AudioCallbackType = FMOD_STUDIO_EVENT_CALLBACK_TYPE;
+using AudioEventCallback = FMOD_STUDIO_EVENT_CALLBACK;
+using AudioInstance = FMOD::Studio::EventInstance;
+using AudioVCA = FMOD::Studio::VCA;
 
 class AudioEngine
 {
@@ -27,8 +23,6 @@ class AudioEngine
 
 		static bool Initialize();
 		static void Terminate();
-
-		// Call this every frame in the program's update loop
 		static void Update();
 		static bool IsInitialized();
 
@@ -86,14 +80,17 @@ class AudioEngine
 		static bool GetVCA(const std::string& studioPath, AudioVCA*& outVCAPtr);
 		static bool VCA_GetVolume(const AudioVCA* vca, float& outVolume);
 		static bool VCA_GetVolume(const AudioVCA* vca, float& outVolume, float& outFinalVolume);
+		static bool VCA_SetVolume(AudioVCA* vca, float Volume);
 
 		// Plugins
 
 		void RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath);
 
-		// Helpers
+		// Sound Engine Advanced
 
 		bool GetAudioDriverIndexByName(const std::string& audioDriverName, int& outDriverIndex) const;
+		static bool GetCurrentAudioDriverInfo(std::string& outName, int& outSampleRate, int& outNumSpeakers, std::string& outSpeakerMode);
+
 
 	private:
 		static std::unique_ptr<AudioEngine> sInstance;
@@ -123,5 +120,4 @@ class AudioEngine
 		static FMOD_RESULT F_CALL AudioEngineErrorCallback(FMOD_SYSTEM* system,
 			FMOD_SYSTEM_CALLBACK_TYPE type, void* commandData1, void* commandData2, void* userdata);
 };
-
 #endif

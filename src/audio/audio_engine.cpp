@@ -1,10 +1,5 @@
 #include "audio_engine.h"
 
-#include <chrono>
-#include <iostream>
-#include <ostream>
-#include <vector>
-
 #if WIN32
 #include <combaseapi.h>
 #endif
@@ -457,6 +452,13 @@ bool AudioEngine::VCA_GetVolume(const AudioVCA* vca, float& outVolume, float& ou
 	return result == FMOD_OK;
 }
 
+bool AudioEngine::VCA_SetVolume(AudioVCA* vca, const float Volume)
+{
+	if (!(IsInitialized() && vca)) { return false; }
+	const FMOD_RESULT result = vca->setVolume(Volume);
+	return result == FMOD_OK;
+}
+
 // Plugins
 
 void AudioEngine::RegisterAdditionalPlugins(const std::vector<std::string>& pluginNames, const std::string& rootPath)
@@ -508,6 +510,41 @@ bool AudioEngine::GetAudioDriverIndexByName(const std::string& audioDriverName, 
 	}
 
 	return false;
+}
+
+bool AudioEngine::GetCurrentAudioDriverInfo(std::string& outName, int& outSampleRate, int& outNumSpeakers, std::string& outSpeakerMode)
+{
+	if (!IsInitialized()) { return false; }
+
+	CoreSystem* coreSystem = nullptr;
+	if (Get().mStudioSystem->getCoreSystem(&coreSystem) != FMOD_OK) { return false; }
+
+	int defaultDriverIndex = 0; // Index 0 is the one currently selected in the OS.
+	char name[256] = {};
+	int sampleRate, numSpeakers;
+	FMOD_SPEAKERMODE speakerMode;
+	const FMOD_RESULT result = coreSystem->getDriverInfo(0, name, sizeof(name),
+		nullptr, &sampleRate, &speakerMode, &numSpeakers);
+
+	if (result != FMOD_OK) { return false; }
+
+	const std::unordered_map<FMOD_SPEAKERMODE, std::string> speakerModes {
+			{FMOD_SPEAKERMODE_DEFAULT, "Default"},
+			{FMOD_SPEAKERMODE_RAW, "Raw"},
+			{FMOD_SPEAKERMODE_MONO, "Mono"},
+			{FMOD_SPEAKERMODE_STEREO, "Stereo"},
+			{FMOD_SPEAKERMODE_QUAD, "Quad"},
+			{FMOD_SPEAKERMODE_SURROUND, "Surround"},
+			{FMOD_SPEAKERMODE_5POINT1, "5.1"},
+			{FMOD_SPEAKERMODE_7POINT1, "7.1"},
+			{FMOD_SPEAKERMODE_7POINT1POINT4, "7.1.4"},
+	};
+
+	outName = std::string(name);
+	outSampleRate = sampleRate;
+	outSpeakerMode = speakerModes.find(speakerMode)->second;
+	outNumSpeakers = numSpeakers;
+	return true;
 }
 
 // Audio Engine (Studio) Callback

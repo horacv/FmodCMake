@@ -11,7 +11,31 @@
 *.so
 *.dylib
 
+libs/raygui/**
+!libs/raygui/
+!libs/raygui/**/
+libs/raygui/examples
+libs/raygui/icons
+libs/raygui/images
+libs/raygui/logo
+libs/raygui/projects
+libs/raygui/src
+libs/raygui/styles
+!libs/raygui/CMakeLists.txt
+!libs/raygui/readme.md
 
-libs/**
-!libs/**/**/CMakeLists.txt
-!libs/**/**/readme.md
+libs/fmod/**
+!libs/fmod/
+!libs/fmod/**/
+!libs/fmod/**/CMakeLists.txt
+!libs/fmod/**/readme.md
+*.framework/
+
+libs/raylib/**
+!libs/raylib/
+!libs/raylib/**/
+!libs/raylib/**/CMakeLists.txt
+!libs/raylib/**/readme.md
+
+fmod_project/**
+!fmod_project/readme.md
