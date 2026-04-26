@@ -18,7 +18,7 @@ namespace
     constexpr auto LABEL_SEPARATOR_LIBRARIES = " LIBRARIES --------------------------------";
     const std::string TEXT_RAYLIB_VERSION = std::format(" Raylib: v{}", RAYLIB_VERSION);
     const std::string TEXT_RAYGUI_VERSION = std::format(" Raygui: v{}", RAYGUI_VERSION);
-    const std::string TEXT_FMOD_VERSION = std::format( " FMOD API: v{}.{}.{}",
+    const std::string TEXT_FMOD_VERSION = std::format( " FMOD API: v{:x}.{:02x}.{:02x}",
         FMOD_VERSION >> 16 & 0xFF, FMOD_VERSION >> 8 & 0xFF, FMOD_VERSION & 0xFF);
 
     constexpr auto LABEL_SEPARATOR_CREDITS = " CREDITS ----------------------------------";

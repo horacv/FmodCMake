@@ -7,7 +7,7 @@ A CMake template project that demonstrates integration of Firelight Technologies
 
 ![screenshot.png](images/screenshot.png)
 
-### Verified FMOD Programmers API Version: 2.03.12
+### Verified FMOD Programmers API Version: 2.03.13
 
 ## Overview
 
@@ -23,13 +23,14 @@ This project showcases a basic integration between FMOD and raylib, featuring:
 - CMake 3.x or higher
 - FMOD Studio and FMOD Core API
 - raylib development libraries
+- raygui headers
 - C++20 compatible compiler.
 
 ## Building the Project
 
 1. Clone or download the repository
 2. Download the [FMOD programmers API](https://www.fmod.com/download) and [raylib](https://github.com/raysan5/raylib/releases)
-3. Copy the FMOD API and raylib libraries for your target platform \
+3. Copy the FMOD API, raylib and raygui libraries for your target platform \
 (You can automate this process by using the provided Python scripts in the `tools/` [directory](tools/readme.md))
 4. Configue the project by using the command line or an IDE
 5. Build using your favorite IDE and compiler
@@ -50,6 +51,8 @@ Note that some IDEs can configure and build your project without using the comma
   - `soundbanks/` - Master.bank, Master.strings.bank and Music.bank
 - `config/` - Contains a configuration file for the audio engine
 - `libs/` - Contains all "third-party" libraries for the project
+  - `raygui/`
+    - `CMakeLists.txt` - CMake configuration file for raygui
   - `raylib/`
     - `include` - raylib header files
     - `lib` - raylib dynamic and static libraries
@@ -67,6 +70,9 @@ Note that some IDEs can configure and build your project without using the comma
 
 FMOD - Studio API Getting Started\
 https://www.fmod.com/docs/2.03/api/studio-api-getting-started.html
+
+raygui\
+https://github.com/raysan5/raygui
 
 raylib\
 https://github.com/raysan5/raylib
