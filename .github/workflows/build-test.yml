@@ -89,8 +89,16 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd libs/raylib/lib/mac
-          ln -sf libraylib.5.5.0.dylib libraylib.dylib
-          ln -sf libraylib.5.5.0.dylib libraylib.550.dylib
+          RAYLIB_DYLIB="$(find . -maxdepth 1 -type f -name 'libraylib.*.dylib' | sort | head -n 1)"
+
+          if [ -z "$RAYLIB_DYLIB" ]; then
+            echo "Could not find versioned raylib dylib in libs/raylib/lib/mac"
+            ls -la
+            exit 1
+          fi
+
+          RAYLIB_DYLIB="${RAYLIB_DYLIB#./}"
+          ln -sf "$RAYLIB_DYLIB" libraylib.dylib
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
