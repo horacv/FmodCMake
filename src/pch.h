@@ -1,6 +1,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#ifdef __cplusplus
+
 // C++ STD Library
 #include <atomic>
 #include <cassert>
@@ -20,4 +22,5 @@
 #include <variant>
 #include <vector>
 
+#endif
 #endif
