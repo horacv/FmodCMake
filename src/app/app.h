@@ -17,7 +17,9 @@ class Application
 
 	private:
 		bool mIsRunning;
+		bool bIsAutoExitEnabled;
 
+		std::string currentPageName;
 		std::shared_ptr<IPage> currentPage;
 		std::vector<std::shared_ptr<IPage>> mPagesPendingDestroy;
 		std::vector<InputEvent> mInputEventsCurrent;
@@ -29,5 +31,9 @@ class Application
 
 		void ChangePage(const std::string_view& pageName);
 		void HandlePagesPendingDestroy();
+
+		// For CI/CD only
+		void SetupAutoExit();
+		void HandleAutoExit();
 };
 #endif

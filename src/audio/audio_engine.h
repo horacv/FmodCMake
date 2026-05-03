@@ -12,9 +12,18 @@ using Audio3DAttributes = FMOD_3D_ATTRIBUTES;
 using AudioBank = FMOD::Studio::Bank;
 using AudioBus = FMOD::Studio::Bus;
 using AudioCallbackType = FMOD_STUDIO_EVENT_CALLBACK_TYPE;
+using AudioCoreSound = FMOD::Sound;
 using AudioEventCallback = FMOD_STUDIO_EVENT_CALLBACK;
 using AudioInstance = FMOD::Studio::EventInstance;
+using AudioProgrammerSoundProperties = FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES;
+using AudioStudioSystemSoundInfo = FMOD_STUDIO_SOUND_INFO;
 using AudioVCA = FMOD::Studio::VCA;
+
+struct ProgrammerSoundContext
+{
+	const char* key;
+	void* userData;
+};
 
 class AudioEngine
 {
@@ -51,6 +60,7 @@ class AudioEngine
 		static bool InstanceRelease(AudioInstance* instance);
 		static bool InstanceSetPaused(AudioInstance* instance, bool bPaused);
 		static bool InstanceIsPaused(const AudioInstance* instance, bool& outPaused);
+		static bool InstanceIsPlaying(const AudioInstance* instance, bool& outPlaying);
 
 		// Parameters
 
@@ -91,6 +101,10 @@ class AudioEngine
 		bool GetAudioDriverIndexByName(const std::string& audioDriverName, int& outDriverIndex) const;
 		static bool GetCurrentAudioDriverInfo(std::string& outName, int& outSampleRate, int& outNumSpeakers, std::string& outSpeakerMode);
 
+		// Helpers
+
+		static float GetNormalizedVolumeInRange(float controlPercent, float dynamicRangeDB = 40);
+
 
 	private:
 		static std::unique_ptr<AudioEngine> sInstance;
@@ -107,8 +121,7 @@ class AudioEngine
 		 * "System callbacks can be called by a variety of FMOD threads,
 		 *  so make sure any code executed inside the callback is thread safe"
 		 */
-
-		static FMOD_RESULT F_CALL StudioSystemCallback(FMOD_STUDIO_SYSTEM* system,
+		static FMOD_RESULT F_CALL AudioEventCallback_Music(FMOD_STUDIO_SYSTEM* system,
 			FMOD_STUDIO_SYSTEM_CALLBACK_TYPE type, void* commandData, void* userdata);
 
 		// Logging and Errors

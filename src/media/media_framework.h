@@ -1,7 +1,6 @@
 #ifndef MEDIA_FRAMEWORK_H
 #define MEDIA_FRAMEWORK_H
 
-#include "audio/audio_engine.h"
 #include "input/input_events.h"
 #include "media_framework.h"
 #include "media_framework_data.h"
@@ -34,11 +33,9 @@ public:
 
 private:
     static std::unique_ptr<MediaFramework> sInstance;
-
     bool bIsInitialized;
 
     MediaWindowSettings mCurrentWindowSettings;
-
     RendereablePageSet mRenderablePages;
 
     MediaFramework();

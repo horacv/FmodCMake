@@ -9,9 +9,9 @@ std::unique_ptr<GUI> GUI::sInstance = nullptr;
 
 GUI::GUI()
 : bIsInitialized(false)
-, mMainMenu(std::make_unique<MainMenu>())
 , bIsAudioInfoOverlayVisible(false)
 , bIsVolumeOverlayVisible(false)
+, mMainMenu(std::make_unique<MainMenu>())
 , mAudioInfoOverlay(std::make_unique<AudioInfoOverlay>())
 , mVolumeOverlay(std::make_unique<VolumeOverlay>())
 {}

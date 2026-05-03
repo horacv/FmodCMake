@@ -47,6 +47,8 @@ add_executable(FmodCmake
         src/pages/page.h
         src/pages/page_cover.cpp
         src/pages/page_cover.h
+        src/pages/page_programmer_sounds.cpp
+        src/pages/page_programmer_sounds.h
 
         src/main.cpp
         src/pch.h

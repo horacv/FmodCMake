@@ -4,15 +4,14 @@
 
 namespace
 {
-    // UI
-    const std::string& title = "FMOD is Alive!";
+    const auto TITLE = "FMOD is Alive!";
+    constexpr auto FONT_SIZE_TITLE = 90;
+    constexpr auto FONT_SIZE_MUSIC_TEXT = 24;
 
-    // AUDIO
-    const std::string& soundbankName = "Music.bank";
-    const std::string& audioEventPath = "event:/MusicTest";
+    const std::string& BANK_MUSIC = "Music.bank";
+    const std::string& EVENT_MUSIC = "event:/MusicTest";
 
 }
-
 
 PageCover::PageCover()
 : mCurrentMusicBar(0)
@@ -33,33 +32,39 @@ void PageCover::Deinitialize()
 {
     IPage::Deinitialize();
     MediaFramework::UnsubscribeFromRenderStage(weak_from_this());
+
+    mMusicInstance->setCallback(nullptr);
+    AudioEngine::InstanceStop(mMusicInstance);
+    AudioEngine::UnloadSoundBank(mMusicBank);
+
+    bCanDestroy.store(true, std::memory_order_release);
 }
 
 void PageCover::Start()
 {
-    AudioEngine::LoadSoundBankFile(soundbankName);
-    AudioEngine::PlayAudioEvent(audioEventPath,{},
-        this, GlobalAudioEventCallback, FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_BEAT);
+    AudioEngine::LoadSoundBankFile(BANK_MUSIC, mMusicBank);
+    mMusicInstance = AudioEngine::PlayAudioEvent(EVENT_MUSIC,{},
+        this, ProgrammerSoundCallback, FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_BEAT);
 }
 
 void PageCover::RenderStage()
 {
     const MediaWindowSettings& windowSettings = MediaFramework::GetCurrentWindowSettings();
 
-    DrawText(title.c_str(),
+    DrawText(TITLE,
         static_cast<int>(static_cast<float>(windowSettings.width) * 0.2f),
         static_cast<int>(static_cast<float>(windowSettings.height) * 0.45f),
-        90, LIGHTGRAY);
+        FONT_SIZE_TITLE, LIGHTGRAY);
 
     auto [bar, beat] = GetCurrentMusicBarAndBeat();
     const std::string musicBeatText = std::format("Music Bar: {} Beat: {}", bar, beat);
     DrawText(musicBeatText.c_str(),
     	static_cast<int>(static_cast<float>(windowSettings.width) * 0.02f),
     	static_cast<int>(static_cast<float>(windowSettings.height) * 0.95f),
-    	24, LIGHTGRAY);
+    	FONT_SIZE_MUSIC_TEXT, LIGHTGRAY);
 }
 
-FMOD_RESULT PageCover::GlobalAudioEventCallback(const FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
+FMOD_RESULT PageCover::ProgrammerSoundCallback(const FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
     FMOD_STUDIO_EVENTINSTANCE* eventInstance, void* properties)
 {
     if (type == FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_BEAT)

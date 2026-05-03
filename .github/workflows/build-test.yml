@@ -123,28 +123,34 @@ jobs:
       - name: Run application (Windows)
         if: runner.os == 'Windows'
         timeout-minutes: 1
+        env:
+          FMOD_CMAKE_AUTO_EXIT: 1
         run: |
           cd build
           Start-Process -FilePath ".\FmodCmake.exe" -PassThru | ForEach-Object {
-            Start-Sleep -Seconds 10
+            Start-Sleep -Seconds 20
             if (!$_.HasExited) { Stop-Process -Id $_.Id -Force }
           }
 
       - name: Run application (Linux)
         if: runner.os == 'Linux'
         timeout-minutes: 1
+        env:
+          FMOD_CMAKE_AUTO_EXIT: 1
         run: |
           cd build
-          xvfb-run -a timeout 10s ./FmodCmake || test $? -eq 124
+          xvfb-run -a timeout 20s ./FmodCmake || test $? -eq 124
 
       - name: Run application (macOS)
         if: runner.os == 'macOS'
         timeout-minutes: 1
+        env:
+          FMOD_CMAKE_AUTO_EXIT: 1
         run: |
           cd build
           ./FmodCmake &
           PID=$!
-          sleep 10
+          sleep 20
           kill $PID 2>/dev/null || true
 
       - name: Upload build artifacts

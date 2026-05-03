@@ -6,7 +6,8 @@
 
 std::unique_ptr<AudioEngine> AudioEngine::sInstance(nullptr);
 
-namespace {
+namespace
+{
 	FMOD_SPEAKERMODE ParseSpeakerMode(const std::string& speakerMode) {
 		std::unordered_map<std::string, FMOD_SPEAKERMODE> speakerModes{
 				{"Stereo", FMOD_SPEAKERMODE_STEREO},
@@ -164,7 +165,7 @@ bool AudioEngine::Initialize()
 	// AUDIO ENGINE CALLBACK
 
 	audioEngine.mStudioSystem->setUserData(&audioEngine);
-	audioEngine.mStudioSystem->setCallback(StudioSystemCallback, FMOD_STUDIO_SYSTEM_CALLBACK_ALL);
+	audioEngine.mStudioSystem->setCallback(AudioEventCallback_Music, FMOD_STUDIO_SYSTEM_CALLBACK_ALL);
 
 	// ADDITIONAL PLUGINS
 	// Registering the resonance dynamic library as an additional plugin
@@ -272,15 +273,16 @@ AudioInstance* AudioEngine::PlayAudioEvent(const std::string& studioPath, const 
 
 	instance->set3DAttributes(&audio3dAttributes);
 
+	if (userData)
+	{
+		instance->setUserData(userData);
+	}
+
 	if (callback)
 	{
 		instance->setCallback(callback, callbackType);
 	}
 
-	if (userData)
-	{
-		instance->setUserData(userData);
-	}
 
 	if (autoStart)
 	{
@@ -330,6 +332,19 @@ bool AudioEngine::InstanceIsPaused(const AudioInstance* instance, bool& outPause
 {
 	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
 	const FMOD_RESULT result = instance->getPaused(&outPaused);
+	return result == FMOD_OK;
+}
+bool AudioEngine::InstanceIsPlaying(const AudioInstance* instance, bool& outPlaying)
+{
+	if (!(IsInitialized() && instance && instance->isValid())) { return false; }
+
+	FMOD_STUDIO_PLAYBACK_STATE state;
+	const FMOD_RESULT result = instance->getPlaybackState(&state);
+
+	outPlaying = state == FMOD_STUDIO_PLAYBACK_PLAYING
+			  || state == FMOD_STUDIO_PLAYBACK_STARTING
+		      || state == FMOD_STUDIO_PLAYBACK_SUSTAINING;
+
 	return result == FMOD_OK;
 }
 
@@ -547,13 +562,34 @@ bool AudioEngine::GetCurrentAudioDriverInfo(std::string& outName, int& outSample
 	return true;
 }
 
+float AudioEngine::GetNormalizedVolumeInRange(const float controlPercent, const float dynamicRangeDB)
+{
+	/*
+	 * Implementation based on Guy Somberg Chapter 19: "Implementing Volume Sliders"
+	 * Game Audio Programming 2 (Principles and Practices), K Peters/CRC Press
+	 * https://www.routledge.com/Game-Audio-Programming-2-Principles-and-Practices/Somberg/p/book/9781032401799
+	 */
+
+	if (dynamicRangeDB <= 0.0f || controlPercent <= 0.0f)
+	{
+		return 0.0f;
+	}
+	constexpr float DecibelsToAmplitudeScale = 0.05f;
+	const float power = powf(10.0f, dynamicRangeDB * DecibelsToAmplitudeScale);
+	const float a = 1.f / power;
+	const float b = logf(power);
+	return a * expf(controlPercent * b);
+}
+
 // Audio Engine (Studio) Callback
 
-FMOD_RESULT AudioEngine::StudioSystemCallback(FMOD_STUDIO_SYSTEM* system, FMOD_STUDIO_SYSTEM_CALLBACK_TYPE type,
+FMOD_RESULT AudioEngine::AudioEventCallback_Music(FMOD_STUDIO_SYSTEM* system, FMOD_STUDIO_SYSTEM_CALLBACK_TYPE type,
 	void* commandData, void* userdata)
 {
-	const auto* audioEngine =  static_cast<AudioEngine*>(userdata);
-	if (!audioEngine) { return FMOD_ERR_BADCOMMAND; }
+	if (const auto* audioEngine =  static_cast<AudioEngine*>(userdata); !audioEngine)
+	{
+		return FMOD_ERR_BADCOMMAND;
+	}
 
 	switch (type)
 	{

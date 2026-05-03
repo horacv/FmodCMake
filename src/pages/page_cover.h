@@ -17,6 +17,10 @@ protected:
     void RenderStage() override;
 
 private:
+
+    AudioBank* mMusicBank = nullptr;
+    AudioInstance* mMusicInstance = nullptr;
+
     mutable std::mutex mMusicDataMutex;
     int mCurrentMusicBar;
     int mCurrentMusicBeat;
@@ -30,7 +34,7 @@ private:
      * "System callbacks can be called by a variety of FMOD threads,
      *  so make sure any code executed inside the callback is thread safe"
      */
-    static FMOD_RESULT F_CALL GlobalAudioEventCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
+    static FMOD_RESULT F_CALL ProgrammerSoundCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
         FMOD_STUDIO_EVENTINSTANCE* eventInstance, void* properties);
 
     void SetCurrentMusicBarAndBeat(int bar, int beat);

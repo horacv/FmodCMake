@@ -9,7 +9,7 @@
 
 namespace
 {
-    constexpr float menuHeight = 26;
+    constexpr float MENU_HEIGHT = 26;
 }
 
 MainMenu::MainMenu()
@@ -35,7 +35,7 @@ void MainMenu::Stage(std::vector<InputEvent>& outEvents)
 {
     IWidget::Stage(outEvents);
 
-    GuiDummyRec({0, 0, static_cast<float>(GetScreenWidth()), menuHeight},"");
+    GuiDummyRec({0, 0, static_cast<float>(GetScreenWidth()), MENU_HEIGHT},"");
 
     mFileMenu->Stage(outEvents);
     mPagesMenu->Stage(outEvents);

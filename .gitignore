@@ -39,3 +39,5 @@ libs/raylib/**
 
 fmod_project/**
 !fmod_project/readme.md
+
+*.reapeaks

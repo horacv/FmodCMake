@@ -25,10 +25,10 @@ class GUI
 
         static std::unique_ptr<GUI> sInstance;
 
-        std::unique_ptr<IWidget> mMainMenu;
-
         bool bIsAudioInfoOverlayVisible;
         bool bIsVolumeOverlayVisible;
+
+        std::unique_ptr<IWidget> mMainMenu;
         std::unique_ptr<IWidget> mAudioInfoOverlay;
         std::unique_ptr<IWidget> mVolumeOverlay;
 

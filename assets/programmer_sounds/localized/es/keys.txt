@@ -1,0 +1,3 @@
+My native language (Localized),native_language-es.wav
+Other languages (Localized),speak_other_languages-es.wav
+Nice talking to you! (Localized),pleasure_talking_to_you-es.wav

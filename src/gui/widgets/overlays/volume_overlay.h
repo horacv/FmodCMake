@@ -14,7 +14,6 @@ public:
     void Stage(std::vector<InputEvent>& outEvents) override;
 
 private:
-
     AudioVCA* mMasterVolume_VCA;
     AudioVCA* mMusicVolume_VCA;
     AudioVCA* mSFXVolume_VCA;

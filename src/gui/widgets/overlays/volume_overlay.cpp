@@ -61,6 +61,7 @@ void VolumeOverlay::Stage(std::vector<InputEvent>& outEvents)
 
     const Vector2 pivot = {static_cast<float>(GetScreenWidth()) - (WINDOW_WIDTH + WINDOW_PADDING_Y), MAIN_MENU_HEIGHT};
 
+    GuiUnlock();
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     const Rectangle windowRectangle{pivot.x , pivot.y,  WINDOW_WIDTH, WINDOW_HEIGHT};
     const bool bShouldCloseWindow = GuiWindowBox(windowRectangle, LABEL_WINDOW);
@@ -72,7 +73,7 @@ void VolumeOverlay::Stage(std::vector<InputEvent>& outEvents)
         TextFormat("%i", static_cast<int>(mMasterVolumeCurrent * 100)), &mMasterVolumeCurrent, VOLUME_MIN, VOLUME_MAX);
     if (masterVolumeCached != mMasterVolumeCurrent)
     {
-        AudioEngine::VCA_SetVolume(mMasterVolume_VCA, mMasterVolumeCurrent);
+        AudioEngine::VCA_SetVolume(mMasterVolume_VCA, AudioEngine::GetNormalizedVolumeInRange(mMasterVolumeCurrent));
     }
 
     const float musicVolumeCached = mMusicVolumeCurrent;
@@ -81,7 +82,7 @@ void VolumeOverlay::Stage(std::vector<InputEvent>& outEvents)
         TextFormat("%i", static_cast<int>(mMusicVolumeCurrent * 100)), &mMusicVolumeCurrent, VOLUME_MIN, VOLUME_MAX);
     if (musicVolumeCached != mMusicVolumeCurrent)
     {
-        AudioEngine::VCA_SetVolume(mMusicVolume_VCA, mMusicVolumeCurrent);
+        AudioEngine::VCA_SetVolume(mMusicVolume_VCA, AudioEngine::GetNormalizedVolumeInRange(mMusicVolumeCurrent));
     }
 
     const float sfxVolumeCached = mSFXVolumeCurrent;
@@ -90,7 +91,7 @@ void VolumeOverlay::Stage(std::vector<InputEvent>& outEvents)
         TextFormat("%i", static_cast<int>(mSFXVolumeCurrent * 100)), &mSFXVolumeCurrent, VOLUME_MIN, VOLUME_MAX);
     if (sfxVolumeCached != mSFXVolumeCurrent)
     {
-        AudioEngine::VCA_SetVolume(mSFXVolume_VCA, mSFXVolumeCurrent);
+        AudioEngine::VCA_SetVolume(mSFXVolume_VCA, AudioEngine::GetNormalizedVolumeInRange(mSFXVolumeCurrent));
     }
 
     const float voVolumeCached = mVOVolumeCurrent;
@@ -99,11 +100,12 @@ void VolumeOverlay::Stage(std::vector<InputEvent>& outEvents)
         TextFormat("%i", static_cast<int>(mVOVolumeCurrent * 100)), &mVOVolumeCurrent, VOLUME_MIN, VOLUME_MAX);
     if (voVolumeCached != mVOVolumeCurrent)
     {
-        AudioEngine::VCA_SetVolume(mVOVolume_VCA, mVOVolumeCurrent);
+        AudioEngine::VCA_SetVolume(mVOVolume_VCA, AudioEngine::GetNormalizedVolumeInRange(mVOVolumeCurrent));
     }
 
     if (bShouldCloseWindow)
     {
         outEvents.emplace_back(ToggleAudioVolumeWindowEvent());
     }
+    GuiLock();
 }

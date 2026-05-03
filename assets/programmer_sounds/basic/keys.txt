@@ -1,0 +1,3 @@
+Programmer sounds and tables (Non Localized),programmer_sounds_and_tables.wav
+Sources and soundbanks (Non Localized),sources_in_soundbanks.wav
+Try it yourself (Non Localized),try_it_yourself.wav

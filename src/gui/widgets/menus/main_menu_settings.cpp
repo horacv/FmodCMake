@@ -5,15 +5,15 @@
 
 namespace
 {
-	constexpr float menuWidth = 96;
-	constexpr float menuHeight = 26;
-	constexpr float posX = menuWidth * 3;
-	constexpr float posY = 0;
-	Rectangle menuRectangle(posX, posY, menuWidth, menuHeight);
+	constexpr float MENU_WIDTH = 96;
+	constexpr float MENU_HEIGHT = 26;
+	constexpr float POS_X = MENU_WIDTH * 3;
+	constexpr float POS_Y = 0;
+	constexpr Rectangle MENU_RECTANGLE(POS_X, POS_Y, MENU_WIDTH, MENU_HEIGHT);
 
-	std::string menuLabelRoot = "Settings";
-	std::string menuLabelToggleVolumeSettings = GuiIconText(ICON_AUDIO, "Volume");
-	std::string menuMembers = std::format("{};{}", menuLabelRoot, menuLabelToggleVolumeSettings);
+	const auto LABEL_MENU_ROOT = "Settings";
+	const auto LABEL_MENU_VOLUME_SETTINGS = GuiIconText(ICON_AUDIO, "Volume");
+	const auto MENU_ENTRIES = std::format("{};{}", LABEL_MENU_ROOT, LABEL_MENU_VOLUME_SETTINGS);
 }
 
 MainMenuSettings::MainMenuSettings() = default;
@@ -27,7 +27,8 @@ void MainMenuSettings::Stage(std::vector<InputEvent>& outEvents)
 {
 	IWidget::Stage(outEvents);
 
-	if (GuiDropdownBox(menuRectangle, menuMembers.c_str(), &menuActiveIndex, bIsMenuOpen))
+	GuiUnlock();
+	if (GuiDropdownBox(MENU_RECTANGLE, MENU_ENTRIES.c_str(), &menuActiveIndex, bIsMenuOpen))
 	{
 		if (bIsMenuOpen)
 		{
@@ -39,4 +40,9 @@ void MainMenuSettings::Stage(std::vector<InputEvent>& outEvents)
 		bIsMenuOpen = !bIsMenuOpen;
 		menuActiveIndex = 0;
 	}
+
+	if (bIsMenuOpen)
+		GuiLock();
+	else
+		GuiUnlock();
 }
