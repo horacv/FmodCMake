@@ -15,17 +15,17 @@ jobs:
         os_config:
           - os: windows-latest
             platform: windows
-            fmod_api_version: "20313"
+            fmod_api_version: "20314"
             raylib_version: "6.0"
             raygui_version: "4.0"
           - os: ubuntu-latest
             platform: linux
-            fmod_api_version: "20313"
+            fmod_api_version: "20314"
             raylib_version: "6.0"
             raygui_version: "4.0"
           - os: macos-latest
             platform: mac
-            fmod_api_version: "20313"
+            fmod_api_version: "20314"
             raylib_version: "6.0"
             raygui_version: "4.0"
 

@@ -7,7 +7,7 @@ A CMake template project that demonstrates integration of Firelight Technologies
 
 ![screenshot.png](images/screenshot.png)
 
-### Verified FMOD Programmers API Version: 2.03.13
+### Verified FMOD Programmers API Version: 2.03.14
 
 ## Overview
 
