@@ -47,7 +47,7 @@ def main():
     if len(sys.argv) != 3:
         print("Usage: python get_raylib.py <platform> <raylib_version>")
         print("Platforms: mac, linux, windows")
-        print("Example: python get_raylib.py windows 5.5")
+        print("Example: python get_raylib.py windows 6.0")
         sys.exit(1)
 
     platform = sys.argv[1]

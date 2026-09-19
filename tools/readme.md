@@ -51,12 +51,12 @@ Downloads and installs Raylib in one step.
 python setup_raylib.py <platform> <raylib_version> [--delete-installer]
 ```
 - **platform**: `windows`, `linux`, or `mac`.
-- **raylib_version**: e.g., `5.5`.
+- **raylib_version**: e.g., `6.0`.
 - **--delete-installer**: (Optional) Deletes the downloaded archive after successful extraction.
 
 **Example:**
 ```bash
-python setup_raylib.py windows 5.5 --delete-installer
+python setup_raylib.py windows 6.0 --delete-installer
 ```
 
 #### `get_raylib.py`
@@ -69,4 +69,22 @@ python get_raylib.py <platform> <raylib_version>
 Extracts and copies Raylib files from a local archive to the project's `libs/raylib` directory.
 ```bash
 python install_raylib.py <installer_file> [--delete-installer]
+```
+
+---
+
+### Raygui Scripts
+
+#### `setup_raygui_sources.py` (Recommended)
+Downloads and installs Raygui in one step.
+
+```bash
+python setup_raygui_sources.py <raygui_version> [--delete-installer]
+```
+- **raygui_version**: e.g., `5.0` (matching the release tag).
+- **--delete-installer**: (Optional) Deletes the downloaded archive after successful extraction.
+
+**Example:**
+```bash
+python setup_raygui_sources.py 5.0 --delete-installer
 ```

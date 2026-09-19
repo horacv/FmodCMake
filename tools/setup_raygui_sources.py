@@ -65,8 +65,8 @@ def main():
     # Validate arguments
     if len(sys.argv) < 2 or len(sys.argv) > 3:
         print("Usage: python setup_raygui_sources.py <raygui_version> [--delete-installer]")
-        print("Example: python setup_raygui_sources.py 4.0")
-        print("Example: python setup_raygui_sources.py 4.0 --delete-installer")
+        print("Example: python setup_raygui_sources.py 5.0")
+        print("Example: python setup_raygui_sources.py 5.0 --delete-installer")
         print("\nOptions:")
         print("  --delete-installer    Delete the installer file after successful installation")
         sys.exit(1)

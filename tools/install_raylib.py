@@ -93,8 +93,8 @@ def copy_api_files(temp_dir, platform):
 def main():
     if len(sys.argv) < 2 or len(sys.argv) > 3:
         print("Usage: python install_raylib.py <installer_file> [--delete-installer]")
-        print("Example: python install_raylib.py raylib-5.5_win64_msvc16.zip")
-        print("Example: python install_raylib.py raylib-5.5_win64_msvc16.zip --delete-installer")
+        print("Example: python install_raylib.py raylib-6.0_win64_msvc16.zip")
+        print("Example: python install_raylib.py raylib-6.0_win64_msvc16.zip --delete-installer")
         print("\nOptions:")
         print("  --delete-installer    Delete the installer file after successful installation")
         sys.exit(1)
